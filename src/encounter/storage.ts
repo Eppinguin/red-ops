@@ -68,6 +68,18 @@ export function persistEncounterWorkspace(workspace: EncounterWorkspace): void {
   }
 }
 
+export function parseEncounterImport(text: string): EncounterState {
+  const value: unknown = JSON.parse(text, reviver);
+  if (!value || typeof value !== 'object') {
+    throw new Error('The file does not contain an encounter.');
+  }
+  const raw = value as Partial<EncounterState>;
+  if (raw.version !== 1 || !Array.isArray(raw.combatants)) {
+    throw new Error('The file is not a Red Ops encounter export.');
+  }
+  return normalizeEncounter(raw);
+}
+
 /** Backward-compatible helpers for code importing the original single-encounter API. */
 export function loadEncounter(): EncounterState {
   const workspace = loadEncounterWorkspace();

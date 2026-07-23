@@ -1,5 +1,5 @@
 import type { TargetedEvent } from 'preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import {
   CRITICAL_INJURIES,
   createCriticalInjury,
@@ -22,7 +22,7 @@ import {
   isSeriouslyWounded,
   sortCombatants,
 } from '../encounter/model';
-import { loadEncounterWorkspace, persistEncounterWorkspace } from '../encounter/storage';
+import { loadEncounterWorkspace, parseEncounterImport, persistEncounterWorkspace } from '../encounter/storage';
 import { rangeDv, validRangeBands } from '../encounter/rangeDvs';
 import { AttackResolverDialog } from './AttackResolverDialog';
 import { RangeDvDialog } from './RangeDvDialog';
@@ -735,7 +735,7 @@ function CombatantRow({ combatant, active, onDeck, selected, dispatch, onSelect,
   );
 }
 
-function duplicateEncounter(source: EncounterState): EncounterState {
+function copyEncounter(source: EncounterState, name: string, lastEvent: string): EncounterState {
   const combatantIds = new Map<string, string>();
   const combatants = source.combatants.map((combatant) => {
     const newCombatantId = uiId(combatant.kind);
@@ -752,13 +752,17 @@ function duplicateEncounter(source: EncounterState): EncounterState {
   return {
     ...structuredClone(source),
     id: uiId('encounter'),
-    name: `${source.name} copy`,
+    name,
     activeCombatantId: source.activeCombatantId ? combatantIds.get(source.activeCombatantId) ?? null : null,
     combatants,
     past: [],
-    lastEvent: 'Encounter duplicated',
+    lastEvent,
     updatedAt: new Date().toISOString(),
   };
+}
+
+function duplicateEncounter(source: EncounterState): EncounterState {
+  return copyEncounter(source, `${source.name} copy`, 'Encounter duplicated');
 }
 
 function activeEncounter(workspace: EncounterWorkspace): EncounterState {
@@ -769,6 +773,7 @@ function activeEncounter(workspace: EncounterWorkspace): EncounterState {
 
 export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: EncounterTrackerProps) {
   const [workspace, setWorkspace] = useState<EncounterWorkspace>(loadEncounterWorkspace);
+  const importInput = useRef<HTMLInputElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [damageId, setDamageId] = useState<string | null>(null);
   const [rangeReferenceOpen, setRangeReferenceOpen] = useState(false);
@@ -864,6 +869,24 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
       return { ...current, activeEncounterId: next.id, encounters };
     });
   };
+  const importEncounter = async (event: InputEvent) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const source = parseEncounterImport(await file.text());
+      const encounter = copyEncounter(source, source.name, `Imported from ${file.name}`);
+      setWorkspace((current) => ({
+        ...current,
+        activeEncounterId: encounter.id,
+        encounters: [...current.encounters, encounter],
+      }));
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'The file could not be read.';
+      window.alert(`Could not import encounter. ${detail}`);
+    }
+  };
   const addRandomToCurrent = (result: RandomEncounterResult, combatants: EncounterCombatant[]) => {
     dispatch({
       type: 'apply-random-encounter',
@@ -894,7 +917,18 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
             onClick={() => setWorkspace((current) => ({ ...current, activeEncounterId: encounter.id }))}
           ><strong>{encounter.name}</strong><span>{encounter.combatants.length} combatants · R{encounter.round}</span></button>)}
         </div>
-        <div class="encounter-library-actions"><button type="button" onClick={createEncounter}>+ New</button><button type="button" onClick={cloneCurrent}>Duplicate</button><button type="button" class="danger-text" onClick={deleteCurrent}>Delete</button></div>
+        <div class="encounter-library-actions">
+          <div class="encounter-action-group" role="group" aria-label="Create encounters">
+            <button type="button" onClick={createEncounter}>+ New</button>
+            <button type="button" onClick={() => importInput.current?.click()}>Import</button>
+          </div>
+          <div class="encounter-action-group" role="group" aria-label="Copy encounters">
+            <button type="button" onClick={cloneCurrent}>Duplicate</button>
+            <button type="button" onClick={() => downloadJson(`${state.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'encounter'}.json`, state)}>Export</button>
+          </div>
+          <button type="button" class="danger-text" onClick={deleteCurrent}>Delete</button>
+          <input ref={importInput} hidden type="file" accept=".json,application/json" onChange={importEncounter} />
+        </div>
       </div>
 
       <header class="encounter-command panel">
@@ -903,21 +937,18 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
           <input aria-label="Encounter name" value={state.name} onInput={(event: InputEvent) => dispatch({ type: 'rename', name: event.currentTarget.value })} />
           <textarea class="encounter-brief-input" aria-label="Encounter brief" placeholder="Scene setup, motives, non-combat resolution, reinforcements…" value={state.brief} onInput={(event: TextAreaEvent) => dispatch({ type: 'set-brief', brief: event.currentTarget.value })} />
         </div>
-        <div class="round-display">
-          <span>Round</span>
-          <strong>{state.round}</strong>
-          <small class={active ? 'has-active' : ''} title={active ? `${active.name} is acting` : 'No active turn'}>{active?.name ?? 'No active turn'}</small>
-          {onDeckCombatant && <small class="on-deck-name" title={`${onDeckCombatant.name} acts next`}>next: {onDeckCombatant.name}</small>}
-        </div>
-        <div class="encounter-toolbar">
-          <button type="button" class="add-combatants-button" onClick={() => setAddTab('statblocks')}>+ Add combatants</button>
-          <button type="button" onClick={() => dispatch({ type: 'roll-initiative', scope: 'npcs' })}>Roll NPCs</button>
-          <button type="button" onClick={() => dispatch({ type: 'roll-initiative', scope: 'all' })}>Roll all</button>
-          <button type="button" onClick={() => dispatch({ type: 'advance-turn', direction: -1 })}>← Previous</button>
-          <button type="button" class="primary-action" onClick={() => dispatch({ type: 'advance-turn', direction: 1 })}>Next turn →</button>
-          <button type="button" disabled={!state.past.length} onClick={() => dispatch({ type: 'undo' })}>Undo</button>
-          <button type="button" onClick={() => setRangeReferenceOpen(true)}>Range DVs</button>
-          <button type="button" onClick={() => downloadJson(`${state.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'encounter'}.json`, state)}>Export</button>
+        <div class="encounter-turn-command">
+          <div class="round-display">
+            <span>Round</span>
+            <strong>{state.round}</strong>
+            <small class={active ? 'has-active' : ''} title={active ? `${active.name} is acting` : 'No active turn'}>{active?.name ?? 'No active turn'}</small>
+            {onDeckCombatant && <small class="on-deck-name" title={`${onDeckCombatant.name} acts next`}>next: {onDeckCombatant.name}</small>}
+          </div>
+          <div class="encounter-turn-controls" role="group" aria-label="Turn controls">
+            <button type="button" onClick={() => dispatch({ type: 'advance-turn', direction: -1 })}>← Previous</button>
+            <button type="button" class="primary-action" onClick={() => dispatch({ type: 'advance-turn', direction: 1 })}>Next turn →</button>
+            <button type="button" disabled={!state.past.length} onClick={() => dispatch({ type: 'undo' })}>Undo</button>
+          </div>
         </div>
         <div class={`encounter-event ${state.lastEvent ? '' : 'idle'} ${state.lastEvent?.includes('CRITICAL') ? 'critical-event' : ''}`} role="status">
           <strong>{state.lastEvent ?? 'Ready. Roll initiative, then run the turn order.'}</strong>
@@ -927,6 +958,17 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
 
       <div class={`encounter-workspace ${selected ? 'has-inspector' : ''}`}>
         <div class={`initiative-panel panel density-${density}`}>
+          <div class="initiative-toolbar">
+            <div class="initiative-setup">
+              <span>Combat setup</span>
+              <div role="group" aria-label="Combat setup controls">
+                <button type="button" class="add-combatants-button" onClick={() => setAddTab('statblocks')}>+ Add combatants</button>
+                <button type="button" disabled={!state.combatants.some((combatant) => combatant.kind === 'npc')} onClick={() => dispatch({ type: 'roll-initiative', scope: 'npcs' })}>Roll NPCs</button>
+                <button type="button" disabled={!state.combatants.length} onClick={() => dispatch({ type: 'roll-initiative', scope: 'all' })}>Roll all</button>
+              </div>
+            </div>
+            <button type="button" class="range-reference-button" onClick={() => setRangeReferenceOpen(true)}>Range DV reference</button>
+          </div>
           <div class="initiative-table-scroll">
             <div class="initiative-table">
               <header class="initiative-header">
