@@ -15,25 +15,19 @@ import {
   attackPenalty,
   calculateDamage,
   canDodgeRanged,
-  combatantFromNpc,
   combatantPenalty,
   createEmptyEncounter,
-  createPcCombatant,
   deathSaveTarget,
   encounterReducer,
   isSeriouslyWounded,
   sortCombatants,
 } from '../encounter/model';
-import {
-  createOfficialCombatant,
-  genericNpcTemplates,
-  type OfficialNpcTemplateId,
-} from '../encounter/officialNpcs';
 import { loadEncounterWorkspace, persistEncounterWorkspace } from '../encounter/storage';
 import { rangeDv, validRangeBands } from '../encounter/rangeDvs';
 import { AttackResolverDialog } from './AttackResolverDialog';
 import { RangeDvDialog } from './RangeDvDialog';
-import { RandomEncounterBuilder, randomEncounterBrief } from './RandomEncounterBuilder';
+import { randomEncounterBrief } from './RandomEncounterBuilder';
+import { AddCombatantsDrawer, type AddTab } from './AddCombatantsDrawer';
 import type { RandomEncounterResult } from '../encounter/randomEncounters';
 import type { CatalogEntry } from '../content/types';
 import type {
@@ -741,95 +735,6 @@ function CombatantRow({ combatant, active, onDeck, selected, dispatch, onSelect,
   );
 }
 
-function AddCombatants({ currentNpc, savedNpcs, referenceEntries, dispatch, open }: {
-  currentNpc: GeneratedNpcView | null;
-  savedNpcs: readonly SavedNpcRecord[];
-  referenceEntries: readonly CatalogEntry[];
-  dispatch: (action: EncounterAction) => void;
-  open: boolean;
-}) {
-  const [pcName, setPcName] = useState('');
-  const [pcInitiative, setPcInitiative] = useState('');
-  const [pcBase, setPcBase] = useState('');
-  const [pcHp, setPcHp] = useState('');
-  const [pcBody, setPcBody] = useState('');
-  const [pcHead, setPcHead] = useState('');
-  const [savedId, setSavedId] = useState('');
-  const [genericTemplateId, setGenericTemplateId] = useState<OfficialNpcTemplateId | ''>('');
-  const [genericSide, setGenericSide] = useState<EncounterCombatant['side']>('enemy');
-  const [genericCount, setGenericCount] = useState('1');
-  const genericTemplates = useMemo(genericNpcTemplates, []);
-
-  const addGenericNpcs = () => {
-    if (!genericTemplateId) return;
-    const count = Math.max(1, Math.min(20, Math.trunc(Number(genericCount)) || 1));
-    const template = genericTemplates.find((candidate) => candidate.id === genericTemplateId);
-    if (!template) return;
-    const combatants = Array.from({ length: count }, (_, index) => createOfficialCombatant(genericTemplateId, {
-      name: count > 1 ? `${template.name} ${index + 1}` : template.name,
-      side: genericSide,
-      referenceEntries,
-      notes: 'Added manually from the generic NPC statblock library.',
-    }));
-    dispatch({ type: 'add-combatants', combatants, source: `${template.name} stat block` });
-    setGenericCount('1');
-  };
-
-  const addPc = () => {
-    if (!pcName.trim()) return;
-    dispatch({ type: 'add-combatant', combatant: createPcCombatant({
-      name: pcName,
-      initiative: pcInitiative === '' ? null : Number(pcInitiative),
-      initiativeBase: pcBase === '' ? null : Number(pcBase),
-      maxHp: pcHp === '' ? null : Number(pcHp),
-      bodySp: pcBody === '' ? 0 : Number(pcBody),
-      headSp: pcHead === '' ? 0 : Number(pcHead),
-    }) });
-    setPcName(''); setPcInitiative(''); setPcBase(''); setPcHp(''); setPcBody(''); setPcHead('');
-  };
-
-  return (
-    <details class="encounter-add" open={open}>
-      <summary>Add combatants</summary>
-      <div class="add-combatant-grid">
-        <section class="generic-npc-add">
-          <h3>Generic NPC statblock</h3>
-          <p>Add any core generic NPC directly, using the same complete statblock used by random encounters.</p>
-          <div class="generic-npc-fields">
-            <select aria-label="Generic NPC statblock" value={genericTemplateId} onChange={(event: SelectEvent) => setGenericTemplateId(event.currentTarget.value as OfficialNpcTemplateId | '')}>
-              <option value="">Choose statblock…</option>
-              {genericTemplates.map((template) => <option key={template.id} value={template.id}>{template.name} · {template.tier}</option>)}
-            </select>
-            <select aria-label="Generic NPC disposition" value={genericSide} onChange={(event: SelectEvent) => setGenericSide(event.currentTarget.value as EncounterCombatant['side'])}>
-              <option value="enemy">Enemy</option>
-              <option value="neutral">Neutral</option>
-              <option value="ally">Ally</option>
-              <option value="player">Player</option>
-            </select>
-            <input aria-label="Number of generic NPCs" type="number" min="1" max="20" value={genericCount} onInput={(event: InputEvent) => setGenericCount(event.currentTarget.value)} />
-            <button type="button" class="primary-action" disabled={!genericTemplateId} onClick={addGenericNpcs}>Add statblock</button>
-          </div>
-        </section>
-        <section>
-          <h3>Generated NPC</h3>
-          <p>Add the current operative or a saved NPC. Each copy gets independent HP, armor, ammo, notes, and initiative.</p>
-          <button type="button" class="primary-action" disabled={!currentNpc} onClick={() => currentNpc && dispatch({ type: 'add-combatant', combatant: combatantFromNpc(currentNpc) })}>Add current NPC</button>
-          <div class="saved-npc-add"><select value={savedId} onChange={(event: SelectEvent) => setSavedId(event.currentTarget.value)}><option value="">Saved NPC…</option>{savedNpcs.map((record) => <option key={record.id} value={record.id}>{record.label}</option>)}</select><button type="button" disabled={!savedId} onClick={() => {
-            const record = savedNpcs.find((candidate) => candidate.id === savedId);
-            if (record) dispatch({ type: 'add-combatant', combatant: combatantFromNpc(record.view) });
-          }}>Add</button></div>
-        </section>
-        <section>
-          <h3>Player character</h3>
-          <p>Only name and initiative are required. Vitals and armor are optional.</p>
-          <div class="pc-fields"><input placeholder="Name" value={pcName} onInput={(event: InputEvent) => setPcName(event.currentTarget.value)} /><input type="number" placeholder="Initiative" value={pcInitiative} onInput={(event: InputEvent) => setPcInitiative(event.currentTarget.value)} /><input type="number" placeholder="REF / init base" value={pcBase} onInput={(event: InputEvent) => setPcBase(event.currentTarget.value)} /><input type="number" placeholder="Max HP" value={pcHp} onInput={(event: InputEvent) => setPcHp(event.currentTarget.value)} /><input type="number" placeholder="Body SP" value={pcBody} onInput={(event: InputEvent) => setPcBody(event.currentTarget.value)} /><input type="number" placeholder="Head SP" value={pcHead} onInput={(event: InputEvent) => setPcHead(event.currentTarget.value)} /></div>
-          <button type="button" class="primary-action" disabled={!pcName.trim()} onClick={addPc}>Add PC</button>
-        </section>
-      </div>
-    </details>
-  );
-}
-
 function duplicateEncounter(source: EncounterState): EncounterState {
   const combatantIds = new Map<string, string>();
   const combatants = source.combatants.map((combatant) => {
@@ -869,6 +774,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
   const [rangeReferenceOpen, setRangeReferenceOpen] = useState(false);
   const [attackResolver, setAttackResolver] = useState<{ combatantId: string; attackId: string } | null>(null);
   const [density, setDensity] = useState<RowDensity>(loadDensity);
+  const [addTab, setAddTab] = useState<AddTab | null>(null);
   const state = activeEncounter(workspace);
   const ordered = useMemo(() => sortCombatants(state.combatants), [state.combatants]);
   // The combatant who acts after the current one, so the GM can prompt the next
@@ -1004,6 +910,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
           {onDeckCombatant && <small class="on-deck-name" title={`${onDeckCombatant.name} acts next`}>next: {onDeckCombatant.name}</small>}
         </div>
         <div class="encounter-toolbar">
+          <button type="button" class="add-combatants-button" onClick={() => setAddTab('statblocks')}>+ Add combatants</button>
           <button type="button" onClick={() => dispatch({ type: 'roll-initiative', scope: 'npcs' })}>Roll NPCs</button>
           <button type="button" onClick={() => dispatch({ type: 'roll-initiative', scope: 'all' })}>Roll all</button>
           <button type="button" onClick={() => dispatch({ type: 'advance-turn', direction: -1 })}>← Previous</button>
@@ -1017,15 +924,6 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
           <span class="shortcut-hints"><kbd>N</kbd> next · <kbd>P</kbd> previous · <kbd>D</kbd> damage · <kbd>U</kbd> undo</span>
         </div>
       </header>
-
-      <RandomEncounterBuilder
-        referenceEntries={referenceEntries}
-        defaultPartySize={Math.max(1, state.combatants.filter((combatant) => combatant.kind === 'pc').length || 4)}
-        onAddToCurrent={addRandomToCurrent}
-        onCreatePrepared={createPreparedFromRandom}
-      />
-
-      <AddCombatants currentNpc={currentNpc} savedNpcs={savedNpcs} referenceEntries={referenceEntries} dispatch={dispatch} open={state.combatants.length === 0} />
 
       <div class={`encounter-workspace ${selected ? 'has-inspector' : ''}`}>
         <div class={`initiative-panel panel density-${density}`}>
@@ -1045,7 +943,15 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
                   onSelect={() => setSelectedId(combatant.id)}
                   onDamage={() => setDamageId(combatant.id)}
                   onResolveAttack={(attackId) => setAttackResolver({ combatantId: combatant.id, attackId })}
-                />) : <div class="encounter-empty"><strong>No combatants yet.</strong><p>Add a generic statblock, generated NPC, saved NPC, or minimal player record above.</p></div>}
+                />) : <div class="encounter-empty">
+                  <strong>No combatants yet</strong>
+                  <p>Add official stat blocks, your own NPCs and players, or roll a random Night City scene.</p>
+                  <div class="encounter-empty-actions">
+                    <button type="button" class="primary-action" onClick={() => setAddTab('statblocks')}>Add stat blocks</button>
+                    <button type="button" onClick={() => setAddTab('roster')}>Add NPCs &amp; players</button>
+                    <button type="button" onClick={() => setAddTab('random')}>Roll an encounter</button>
+                  </div>
+                </div>}
               </div>
             </div>
           </div>
@@ -1058,6 +964,18 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
         </div>
         {selected && <CombatantInspector combatant={selected} dispatch={dispatch} onClose={() => setSelectedId(null)} onDamage={() => setDamageId(selected.id)} onResolveAttack={(attackId) => setAttackResolver({ combatantId: selected.id, attackId })} />}
       </div>
+      {addTab && <AddCombatantsDrawer
+        currentNpc={currentNpc}
+        savedNpcs={savedNpcs}
+        referenceEntries={referenceEntries}
+        defaultPartySize={Math.max(1, state.combatants.filter((combatant) => combatant.kind === 'pc').length || 4)}
+        dispatch={dispatch}
+        onAddRandomToCurrent={addRandomToCurrent}
+        onCreatePreparedFromRandom={createPreparedFromRandom}
+        tab={addTab}
+        onTabChange={setAddTab}
+        onClose={() => setAddTab(null)}
+      />}
       {damageTarget && <DamageDialog combatant={damageTarget} onClose={() => setDamageId(null)} dispatch={dispatch} />}
       {resolverAttacker && resolverAttack && <AttackResolverDialog
         attacker={resolverAttacker}

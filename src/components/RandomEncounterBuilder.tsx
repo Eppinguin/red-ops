@@ -13,7 +13,7 @@ import {
 } from '../encounter/randomEncounters';
 import type { CombatantSide, EncounterCombatant, EncounterSkillValue } from '../encounter/types';
 
-interface RandomEncounterBuilderProps {
+interface RandomEncounterPanelProps {
   referenceEntries: readonly CatalogEntry[];
   defaultPartySize: number;
   onAddToCurrent: (result: RandomEncounterResult, combatants: EncounterCombatant[]) => void;
@@ -241,8 +241,7 @@ function CountControl({ group, onChange }: { group: RandomEncounterGroup; onChan
   );
 }
 
-export function RandomEncounterBuilder({ referenceEntries, defaultPartySize, onAddToCurrent, onCreatePrepared }: RandomEncounterBuilderProps) {
-  const [expanded, setExpanded] = useState(false);
+export function RandomEncounterPanel({ referenceEntries, defaultPartySize, onAddToCurrent, onCreatePrepared }: RandomEncounterPanelProps) {
   const [partySize, setPartySize] = useState(Math.max(1, defaultPartySize || 4));
   const [period, setPeriod] = useState<EncounterPeriod>('daytime');
   const [zone, setZone] = useState<ThreatZone>('moderate');
@@ -273,56 +272,41 @@ export function RandomEncounterBuilder({ referenceEntries, defaultPartySize, onA
     : current);
 
   return (
-    <section class="random-encounter-builder panel">
-      <header class="random-encounter-header">
-        <div>
-          <span class="kicker">Encounter generator</span>
-          <h2>Random Night City encounter</h2>
-          <p>{result
-            ? `${result.roll ? result.roll.toString().padStart(2, '0') : '—'} · ${result.title} · ${materialized?.combatants.length ?? 0} initiative-ready`
-            : 'Roll a rules-based scene, review the roster, then add it to this encounter or save it for later.'}</p>
-        </div>
-        <button type="button" class={expanded ? 'active' : ''} aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
-          {expanded ? 'Close builder' : 'Generate encounter'}
-        </button>
-      </header>
+    <section class="random-encounter-builder">
+      <div class="random-encounter-controls">
+        <label>
+          <span>Crew size</span>
+          <input aria-label="Crew size" type="number" min="1" max="20" value={partySize} onInput={(event: InputEvent) => setPartySize(Math.max(1, Number(event.currentTarget.value) || 1))} />
+        </label>
+        <label>
+          <span>Time of day</span>
+          <select value={period} onChange={(event: SelectEvent) => setPeriod(event.currentTarget.value as EncounterPeriod)}>
+            {Object.entries(PERIOD_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <label class="random-zone-field">
+          <span>Threat zone</span>
+          <select value={zone} onChange={(event: SelectEvent) => setZone(event.currentTarget.value as ThreatZone)}>
+            {Object.entries(ZONE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        {zone !== 'moderate' && zone !== 'executive' && (
+          <label class="random-guidance-toggle" title="The source presents these regional bands as guidance, not a mandatory replacement table.">
+            <input type="checkbox" checked={regionalGuidance} onChange={(event: InputEvent) => setRegionalGuidance(event.currentTarget.checked)} />
+            <span>Use regional percentile guidance</span>
+          </label>
+        )}
+        <button type="button" class="primary-action random-roll-action" onClick={roll}>{result ? 'Roll again' : 'Roll encounter'}</button>
+      </div>
 
-      {expanded && (
-        <div class="random-encounter-controls">
-          <label>
-            <span>Crew size</span>
-            <input aria-label="Crew size" type="number" min="1" max="20" value={partySize} onInput={(event: InputEvent) => setPartySize(Math.max(1, Number(event.currentTarget.value) || 1))} />
-          </label>
-          <label>
-            <span>Time of day</span>
-            <select value={period} onChange={(event: SelectEvent) => setPeriod(event.currentTarget.value as EncounterPeriod)}>
-              {Object.entries(PERIOD_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <label class="random-zone-field">
-            <span>Threat zone</span>
-            <select value={zone} onChange={(event: SelectEvent) => setZone(event.currentTarget.value as ThreatZone)}>
-              {Object.entries(ZONE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          {zone !== 'moderate' && zone !== 'executive' && (
-            <label class="random-guidance-toggle" title="The source presents these regional bands as guidance, not a mandatory replacement table.">
-              <input type="checkbox" checked={regionalGuidance} onChange={(event: InputEvent) => setRegionalGuidance(event.currentTarget.checked)} />
-              <span>Use regional percentile guidance</span>
-            </label>
-          )}
-          <button type="button" class="primary-action random-roll-action" onClick={roll}>{result ? 'Roll a new encounter' : 'Roll encounter'}</button>
-        </div>
-      )}
-
-      {expanded && !result && (
+      {!result && (
         <div class="random-empty-state">
           <strong>Ready to roll</strong>
           <span>The result remains a preview until you explicitly add or prepare it.</span>
         </div>
       )}
 
-      {expanded && result && (
+      {result && (
         <div class="random-encounter-result">
           <section class="random-result-hero">
             <div class="random-roll-badge">
@@ -391,7 +375,12 @@ export function RandomEncounterBuilder({ referenceEntries, defaultPartySize, onA
                   </header>
                   {group.notes && <p class="random-group-note">{group.notes}</p>}
                   <LoadoutControl group={group} onChange={(loadoutId) => setGroupLoadout(group.id, loadoutId)} />
-                  <GroupStatBlockPreview group={group} result={result} referenceEntries={referenceEntries} />
+                  {/* A roll answers "who and how many" first; the full block is
+                      one click away rather than several screens of scrolling. */}
+                  <details class="random-group-preview-toggle" open={Boolean(group.loadoutOptions?.length && !group.selectedLoadoutId)}>
+                    <summary><span>Stat block</span><b aria-hidden="true">Preview</b></summary>
+                    <GroupStatBlockPreview group={group} result={result} referenceEntries={referenceEntries} />
+                  </details>
                 </article>
               ))}
             </div>

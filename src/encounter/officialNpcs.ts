@@ -98,6 +98,13 @@ export interface GenericNpcTemplateSummary {
   tier: OfficialNpcTier;
   sourceLabel: string;
   sourcePage: string;
+  /** Vitals shown on the picker card, so a GM can compare stat blocks before adding one. */
+  hp: number;
+  bodySp: number;
+  headSp: number;
+  armorName: string;
+  /** Primary weapon names, in source order, for the card's loadout line. */
+  weapons: string[];
 }
 
 const GENERIC_NPC_TEMPLATE_IDS = [
@@ -477,6 +484,11 @@ export function genericNpcTemplates(): GenericNpcTemplateSummary[] {
       tier: template.tier,
       sourceLabel: template.sourceLabel ?? 'Cyberpunk RED Core Rulebook · Mooks and Grunts',
       sourcePage: template.sourcePage,
+      hp: template.hp,
+      bodySp: template.armor.body,
+      headSp: template.armor.head,
+      armorName: template.armor.name,
+      weapons: template.weapons.map((weapon) => weapon.name),
     };
   });
 }
