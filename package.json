@@ -1,0 +1,40 @@
+{
+  "name": "cp-red-npc-generator-web",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "check": "npm run typecheck && npm test",
+    "preview": "vite preview",
+    "test": "vitest run && node --test scripts/__tests__/*.test.mjs",
+    "test:watch": "vitest",
+    "sync:upstream": "node scripts/sync-upstream.mjs",
+    "content:sync-foundry": "node scripts/sync-foundry-content.mjs",
+    "test:content": "node --test scripts/__tests__/*.test.mjs"
+  },
+  "dependencies": {
+    "@faker-js/faker": "10.5.0",
+    "preact": "10.29.7",
+    "unidecode-plus": "1.0.5",
+    "yaml": "2.8.1"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.6",
+    "@types/node": "24.1.0",
+    "typescript": "5.8.3",
+    "vite": "8.1.5",
+    "vitest": "4.1.10"
+  },
+  "description": "Frontend-only Cyberpunk RED NPC generator, reference catalog, and persistent encounter runner.",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "upstream": {
+    "repository": "n0lavar/cp_red_npc_generator",
+    "commit": "c3dbce65aeb0c812ceb9300ddb138ad2c7f0a8dd"
+  }
+}

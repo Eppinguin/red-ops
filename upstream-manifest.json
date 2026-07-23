@@ -1,0 +1,32 @@
+{
+  "repository": "n0lavar/cp_red_npc_generator",
+  "commit": "c3dbce65aeb0c812ceb9300ddb138ad2c7f0a8dd",
+  "root": "npc_generator_for_cp_red",
+  "paths": [
+    "configs/ranks.json",
+    "configs/roles.json",
+    "configs/stats.json",
+    "configs/skills.json",
+    "configs/weapon_skills.json",
+    "configs/nationality_weights.json",
+    "configs/description_prompt.md",
+    "configs/items/ammo.json",
+    "configs/items/armor.json",
+    "configs/items/drugs.json",
+    "configs/items/equipment.json",
+    "configs/items/junk.json",
+    "configs/items/weapon.json",
+    "configs/items/cyberware/borgware.json",
+    "configs/items/cyberware/cyberarm.json",
+    "configs/items/cyberware/cyberaudio.json",
+    "configs/items/cyberware/cyberfingers.json",
+    "configs/items/cyberware/cyberleg.json",
+    "configs/items/cyberware/cyberlimb.json",
+    "configs/items/cyberware/cyberopticks.json",
+    "configs/items/cyberware/default_containers.json",
+    "configs/items/cyberware/external_cyberware.json",
+    "configs/items/cyberware/fashionware.json",
+    "configs/items/cyberware/internal_cyberware.json",
+    "configs/items/cyberware/neuralware.json"
+  ]
+}

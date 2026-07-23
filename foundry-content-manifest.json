@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "projectId": 22820629,
+  "repository": "cyberpunk-red-team/fvtt-cyberpunk-red-core",
+  "ref": "v0.92.4",
+  "apiBase": "https://gitlab.com/api/v4",
+  "packRoots": [
+    "src/packs/core",
+    "src/packs/black-chrome",
+    "src/packs/dlc"
+  ],
+  "includedDocumentTypes": [
+    "ammo",
+    "armor",
+    "clothing",
+    "cyberdeck",
+    "cyberware",
+    "drug",
+    "gear",
+    "itemUpgrade",
+    "program",
+    "role",
+    "skill",
+    "vehicle",
+    "weapon",
+    "criticalInjury"
+  ]
+}
