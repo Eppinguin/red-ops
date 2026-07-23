@@ -20,6 +20,7 @@ import type {
 } from './engine/types';
 import { DEFAULT_OPTIONS, DEFAULT_RULES, SKILL_TYPES } from './engine/types';
 import { deleteSavedNpc, listSavedNpcs, saveNpc, type SavedNpcRecord } from './storage';
+import { applyTheme, loadTheme, THEMES, type ThemeId } from './theme';
 
 interface Meta {
   ranks: string[];
@@ -196,6 +197,67 @@ function ItemCard({
   );
 }
 
+function ThemePicker({ theme, onChange }: { theme: ThemeId; onChange: (theme: ThemeId) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const active = THEMES.find((candidate) => candidate.id === theme) ?? THEMES[0];
+
+  useEffect(() => {
+    if (!open) return;
+    // Closing on `click` rather than `mousedown` lets an option's own click
+    // land first; mousedown would tear the menu down before selection.
+    const onDocumentClick = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('click', onDocumentClick);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('click', onDocumentClick);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div class="theme-picker" ref={rootRef}>
+      <button
+        type="button"
+        class="theme-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title={`Colour scheme: ${active.name}`}
+        onClick={(event: MouseEvent) => {
+          event.stopPropagation();
+          setOpen((value) => !value);
+        }}
+      >
+        <span class="theme-swatch" data-theme={active.id} aria-hidden="true"><i /><i /><i /></span>
+        <span class="theme-trigger-name">{active.name}</span>
+      </button>
+      {open && <div class="theme-menu" role="listbox" aria-label="Colour scheme">
+        {THEMES.map((candidate) => (
+          <button
+            type="button"
+            role="option"
+            aria-selected={candidate.id === theme}
+            class={candidate.id === theme ? 'active' : ''}
+            key={candidate.id}
+            onClick={() => {
+              onChange(candidate.id);
+              setOpen(false);
+            }}
+          >
+            <span class="theme-swatch" data-theme={candidate.id} aria-hidden="true"><i /><i /><i /></span>
+            <span class="theme-option-copy"><strong>{candidate.name}</strong><small>{candidate.blurb}</small></span>
+          </button>
+        ))}
+      </div>}
+    </div>
+  );
+}
+
 function EmptyState({ busy, status, progress }: { busy: boolean; status: string; progress: number }) {
   return (
     <div class="empty panel">
@@ -226,6 +288,12 @@ export function App() {
   const [selectedReference, setSelectedReference] = useState<SelectedReference | null>(null);
   const [savedNpcs, setSavedNpcs] = useState<SavedNpcRecord[]>([]);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<ThemeId>(loadTheme);
+
+  const changeTheme = (next: ThemeId) => {
+    setTheme(next);
+    applyTheme(next);
+  };
 
   useEffect(() => {
     const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
@@ -387,7 +455,7 @@ export function App() {
         <div class="brand-mark">R//</div>
         <div class="brand-copy">
           <h1>RED<span>//OPS</span></h1>
-          <p>Cyberpunk RED NPC generator, reference, and encounter runner</p>
+          <p>Cyberpunk RED NPC generator and encounter runner</p>
         </div>
         <nav class="primary-nav" aria-label="Primary">
           <button class={page === 'generator' ? 'active' : ''} onClick={() => setPage('generator')}><span class="nav-key">01</span><span>Generator</span></button>
@@ -395,10 +463,13 @@ export function App() {
           <button class={page === 'reference' ? 'active' : ''} onClick={() => setPage('reference')}><span class="nav-key">03</span><span>Reference</span></button>
           <button class={page === 'library' ? 'active' : ''} onClick={() => setPage('library')}><span class="nav-key">04</span><span>Library</span></button>
         </nav>
-        <div class="engine-state">
-          <i class={busy ? 'loading' : fatal ? 'error' : 'ready'} />
-          <span>{fatal ? 'ENGINE FAULT' : busy ? 'PROCESSING' : 'ONLINE'}</span>
-          {meta && <small>{meta.commit.slice(0, 8)}</small>}
+        <div class="topbar-utilities">
+          <ThemePicker theme={theme} onChange={changeTheme} />
+          <div class="engine-state">
+            <i class={busy ? 'loading' : fatal ? 'error' : 'ready'} />
+            <span>{fatal ? 'ENGINE FAULT' : busy ? 'PROCESSING' : 'ONLINE'}</span>
+            {meta && <small>{meta.commit.slice(0, 8)}</small>}
+          </div>
         </div>
       </header>
 

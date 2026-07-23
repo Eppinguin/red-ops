@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-23T13:17:19.344Z",
+  "generator": {
+    "repository": "n0lavar/cp_red_npc_generator",
+    "commit": "c3dbce65aeb0c812ceb9300ddb138ad2c7f0a8dd"
+  },
+  "foundry": {
+    "projectId": 22820629,
+    "repository": "cyberpunk-red-team/fvtt-cyberpunk-red-core",
+    "ref": "v0.92.4",
+    "commit": "75b8c9d7cb76ed1ea2797a3404ce77172d424b6b",
+    "itemCount": 1073,
+    "contentHash": "450b7e0114ccfd88dd64157952044036ae0102c0dd87086cbbb176ba37f85234"
+  },
+  "entryCount": 1073,
+  "conflictCount": 0
+}

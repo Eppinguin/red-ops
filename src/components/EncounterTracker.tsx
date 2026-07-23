@@ -1008,10 +1008,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
           </div>
           {ordered.length > 0 && <footer class="initiative-footer">
             <span>{ordered.length} combatants</span>
-            <div class="density-toggle" role="group" aria-label="Row density">
-              <button type="button" class={density === 'compact' ? 'active' : ''} aria-pressed={density === 'compact'} title="Fit more combatants on screen" onClick={() => setDensity('compact')}>Compact</button>
-              <button type="button" class={density === 'comfortable' ? 'active' : ''} aria-pressed={density === 'comfortable'} title="Larger touch targets and text" onClick={() => setDensity('comfortable')}>Roomy</button>
-            </div>
+
             <button type="button" onClick={() => dispatch({ type: 'reset-rounds' })}>Reset rounds</button>
             <button type="button" class="danger-text" onClick={() => window.confirm('Clear every combatant from this encounter?') && dispatch({ type: 'clear' })}>Clear encounter</button>
           </footer>}
