@@ -60,6 +60,27 @@ function uiId(prefix: string): string {
   return typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${prefix}-${Date.now()}-${Math.random()}`;
 }
 
+type RowDensity = 'compact' | 'comfortable';
+const DENSITY_KEY = 'red-ops.encounter-density.v1';
+
+function loadDensity(): RowDensity {
+  try {
+    return localStorage.getItem(DENSITY_KEY) === 'comfortable' ? 'comfortable' : 'compact';
+  } catch {
+    return 'compact';
+  }
+}
+
+/**
+ * Wound state drives the row's at-a-glance colour band. A GM reading the table
+ * from across it should not have to parse the HP meter to see who is going down.
+ */
+function woundState(combatant: EncounterCombatant): 'untracked' | 'healthy' | 'serious' | 'mortal' {
+  if (combatant.currentHp === null || combatant.maxHp === null) return 'untracked';
+  if (combatant.currentHp <= 0) return 'mortal';
+  return isSeriouslyWounded(combatant) ? 'serious' : 'healthy';
+}
+
 function signed(value: number): string {
   return `${value >= 0 ? '+' : ''}${value}`;
 }
@@ -277,7 +298,7 @@ function AttackControls({ combatant, attack, dispatch, onResolve, compact = fals
   return (
     <article class={`attack-control ${compact ? 'compact' : ''}`}>
       <div class="attack-control-heading">
-        <strong>{attack.name}</strong>
+        <strong title={`${attack.name} · ${attack.skill}`}>{attack.name}</strong>
         <div class="attack-control-facts">
           <span title="Rate of Fire: maximum attacks normally made with one Action">ROF {attack.rateOfFire ?? '—'}</span>
           {attack.autofireBase !== null && <span title="Autofire attack base">AF {signed(attack.autofireBase)}</span>}
@@ -616,9 +637,10 @@ function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveA
   );
 }
 
-function CombatantRow({ combatant, active, selected, dispatch, onSelect, onDamage, onResolveAttack }: {
+function CombatantRow({ combatant, active, onDeck, selected, dispatch, onSelect, onDamage, onResolveAttack }: {
   combatant: EncounterCombatant;
   active: boolean;
+  onDeck: boolean;
   selected: boolean;
   dispatch: (action: EncounterAction) => void;
   onSelect: () => void;
@@ -626,6 +648,7 @@ function CombatantRow({ combatant, active, selected, dispatch, onSelect, onDamag
   onResolveAttack: (attackId: string) => void;
 }) {
   const primaryAttacks = combatant.attacks.slice(0, 2);
+  const wound = woundState(combatant);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(combatant.name);
 
@@ -642,8 +665,14 @@ function CombatantRow({ combatant, active, selected, dispatch, onSelect, onDamag
   };
 
   return (
-    <article class={`combatant-row ${active ? 'active-turn' : ''} ${selected ? 'selected' : ''} ${combatant.side}`}>
-      <button type="button" class="turn-marker" title={active ? 'Active turn' : 'Set active turn'} onClick={() => dispatch({ type: 'set-active', combatantId: combatant.id })}>{active ? '▶' : '·'}</button>
+    <article class={`combatant-row wound-${wound} ${active ? 'active-turn' : ''} ${onDeck ? 'on-deck' : ''} ${selected ? 'selected' : ''} ${combatant.side}`}>
+      <button
+        type="button"
+        class="turn-marker"
+        title={active ? 'Active turn' : onDeck ? 'Up next — click to jump the turn here' : 'Set active turn'}
+        aria-current={active ? 'true' : undefined}
+        onClick={() => dispatch({ type: 'set-active', combatantId: combatant.id })}
+      >{active ? '▶' : onDeck ? '›' : '·'}</button>
       <div class="initiative-cell"><CommitNumberInput value={combatant.initiative} nullable min={-99} max={999} label={`${combatant.name} initiative`} onCommit={(initiative) => dispatch({ type: 'set-initiative', combatantId: combatant.id, initiative })} /><small>{combatant.initiativeBase === null ? 'manual' : `base ${signed(combatant.initiativeBase)}`}</small></div>
       <div class="combatant-name-cell">
         {editingName ? <input
@@ -660,25 +689,49 @@ function CombatantRow({ combatant, active, selected, dispatch, onSelect, onDamag
               setEditingName(false);
             }
           }}
-        /> : <button type="button" class="combatant-name" onClick={onSelect}>
-          <strong>{combatant.name}</strong>
-          <span class="combatant-meta">
-            {combatant.teamLabel && <b class="combatant-team-badge">{combatant.teamLabel}</b>}
-            <b class={`combatant-side-badge ${combatant.side}`}>{combatant.side}</b>
-            <em>{combatant.kind === 'pc'
-              ? 'PC'
-              : combatant.statBlock
-                ? `${combatant.statBlock.tier} · ${combatant.statBlock.templateName}`
-                : `${combatant.npcView?.rank.name ?? 'NPC'} ${combatant.npcView?.role.name ?? ''}`}</em>
+        /> : <>
+          {/* The rename control sits inline after the name text so it reads as
+              belonging to that name rather than to the row. */}
+          <span class="combatant-name-line">
+            <button type="button" class="combatant-name" onClick={onSelect}>
+              <strong>{combatant.name}</strong>
+            </button>
+            <button
+              type="button"
+              class="rename-combatant-button"
+              title={`Rename ${combatant.name}`}
+              aria-label={`Rename ${combatant.name}`}
+              onClick={() => setEditingName(true)}
+            >✎<span class="sr-only"> Rename</span></button>
           </span>
-        </button>}
-        <button type="button" class="rename-combatant-button" title={`Rename ${combatant.name}`} aria-label={`Rename ${combatant.name}`} onClick={() => setEditingName(true)}>✎</button>
+          <button type="button" class="combatant-meta-button" tabIndex={-1} aria-hidden="true" onClick={onSelect}>
+            <span class="combatant-meta">
+              {combatant.teamLabel && <b class="combatant-team-badge">{combatant.teamLabel}</b>}
+              <b class={`combatant-side-badge ${combatant.side}`}>{combatant.side}</b>
+              <em>{combatant.kind === 'pc'
+                ? 'PC'
+                : combatant.statBlock
+                  ? `${combatant.statBlock.tier} · ${combatant.statBlock.templateName}`
+                  : `${combatant.npcView?.rank.name ?? 'NPC'} ${combatant.npcView?.role.name ?? ''}`}</em>
+            </span>
+          </button>
+        </>}
       </div>
       <HpMeter combatant={combatant} dispatch={dispatch} />
       <div class="armor-cell"><label><span>B</span><CommitNumberInput value={combatant.armor.body.current} min={0} label={`${combatant.name} body SP`} onCommit={(current) => dispatch({ type: 'set-armor', combatantId: combatant.id, location: 'body', current: current ?? 0 })} /></label><label><span>H</span><CommitNumberInput value={combatant.armor.head.current} min={0} label={`${combatant.name} head SP`} onCommit={(current) => dispatch({ type: 'set-armor', combatantId: combatant.id, location: 'head', current: current ?? 0 })} /></label></div>
       <StatusSummary combatant={combatant} />
       <div class="row-attacks">{primaryAttacks.length ? primaryAttacks.map((attack) => <AttackControls key={attack.id} combatant={combatant} attack={attack} dispatch={dispatch} onResolve={() => onResolveAttack(attack.id)} compact />) : <span class="no-attacks">No attacks</span>}</div>
-      <div class="row-actions"><button type="button" class="damage-button" onClick={onDamage}>Damage</button><button type="button" onClick={onSelect}>Stat block</button><button type="button" class="remove-combatant-button" onClick={() => window.confirm(`Remove “${combatant.name}” from this encounter?`) && dispatch({ type: 'remove-combatant', combatantId: combatant.id })}>Remove</button></div>
+      <div class="row-actions">
+        <button type="button" class="damage-button" title={`Apply damage to ${combatant.name}`} onClick={onDamage}>Damage</button>
+        <button type="button" class="statblock-button" title={`Open the full stat block for ${combatant.name}`} onClick={onSelect}>Stat block</button>
+        <button
+          type="button"
+          class="remove-combatant-button"
+          title={`Remove ${combatant.name} from this encounter`}
+          aria-label={`Remove ${combatant.name} from this encounter`}
+          onClick={() => window.confirm(`Remove “${combatant.name}” from this encounter?`) && dispatch({ type: 'remove-combatant', combatantId: combatant.id })}
+        >✕</button>
+      </div>
     </article>
   );
 }
@@ -772,14 +825,30 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
   const [damageId, setDamageId] = useState<string | null>(null);
   const [rangeReferenceOpen, setRangeReferenceOpen] = useState(false);
   const [attackResolver, setAttackResolver] = useState<{ combatantId: string; attackId: string } | null>(null);
+  const [density, setDensity] = useState<RowDensity>(loadDensity);
   const state = activeEncounter(workspace);
   const ordered = useMemo(() => sortCombatants(state.combatants), [state.combatants]);
+  // The combatant who acts after the current one, so the GM can prompt the next
+  // player before the active turn finishes.
+  const onDeckId = useMemo(() => {
+    if (!ordered.length) return null;
+    const index = ordered.findIndex((combatant) => combatant.id === state.activeCombatantId);
+    if (index === -1) return ordered[0]?.id ?? null;
+    return ordered[(index + 1) % ordered.length]?.id ?? null;
+  }, [ordered, state.activeCombatantId]);
   const selected = state.combatants.find((combatant) => combatant.id === selectedId) ?? null;
   const damageTarget = state.combatants.find((combatant) => combatant.id === damageId) ?? null;
   const resolverAttacker = state.combatants.find((combatant) => combatant.id === attackResolver?.combatantId) ?? null;
   const resolverAttack = resolverAttacker?.attacks.find((attack) => attack.id === attackResolver?.attackId) ?? null;
 
   useEffect(() => persistEncounterWorkspace(workspace), [workspace]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(DENSITY_KEY, density);
+    } catch {
+      // Density remains a session preference when browser storage is unavailable.
+    }
+  }, [density]);
   useEffect(() => {
     setSelectedId(null);
     setDamageId(null);
@@ -822,6 +891,9 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
   }, [selectedId, state.activeCombatantId, workspace.activeEncounterId]);
 
   const active = state.combatants.find((combatant) => combatant.id === state.activeCombatantId) ?? null;
+  const onDeckCombatant = active && ordered.length > 1
+    ? state.combatants.find((combatant) => combatant.id === onDeckId) ?? null
+    : null;
   const createEncounter = () => {
     const encounter = createEmptyEncounter(`Encounter ${workspace.encounters.length + 1}`);
     setWorkspace((current) => ({ ...current, activeEncounterId: encounter.id, encounters: [...current.encounters, encounter] }));
@@ -882,7 +954,12 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
           <input aria-label="Encounter name" value={state.name} onInput={(event: InputEvent) => dispatch({ type: 'rename', name: event.currentTarget.value })} />
           <textarea class="encounter-brief-input" aria-label="Encounter brief" placeholder="Scene setup, motives, non-combat resolution, reinforcements…" value={state.brief} onInput={(event: TextAreaEvent) => dispatch({ type: 'set-brief', brief: event.currentTarget.value })} />
         </div>
-        <div class="round-display"><span>Round</span><strong>{state.round}</strong><small>{active?.name ?? 'No active turn'}</small></div>
+        <div class="round-display">
+          <span>Round</span>
+          <strong>{state.round}</strong>
+          <small class={active ? 'has-active' : ''} title={active ? `${active.name} is acting` : 'No active turn'}>{active?.name ?? 'No active turn'}</small>
+          {onDeckCombatant && <small class="on-deck-name" title={`${onDeckCombatant.name} acts next`}>next: {onDeckCombatant.name}</small>}
+        </div>
         <div class="encounter-toolbar">
           <button type="button" onClick={() => dispatch({ type: 'roll-initiative', scope: 'npcs' })}>Roll NPCs</button>
           <button type="button" onClick={() => dispatch({ type: 'roll-initiative', scope: 'all' })}>Roll all</button>
@@ -892,7 +969,10 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
           <button type="button" onClick={() => setRangeReferenceOpen(true)}>Range DVs</button>
           <button type="button" onClick={() => downloadJson(`${state.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'encounter'}.json`, state)}>Export</button>
         </div>
-        {state.lastEvent && <div class={`encounter-event ${state.lastEvent.includes('CRITICAL') ? 'critical-event' : ''}`} role="status"><strong>{state.lastEvent}</strong><span><kbd>N</kbd> next · <kbd>P</kbd> previous · <kbd>D</kbd> damage · <kbd>U</kbd> undo</span></div>}
+        <div class={`encounter-event ${state.lastEvent ? '' : 'idle'} ${state.lastEvent?.includes('CRITICAL') ? 'critical-event' : ''}`} role="status">
+          <strong>{state.lastEvent ?? 'Ready. Roll initiative, then run the turn order.'}</strong>
+          <span class="shortcut-hints"><kbd>N</kbd> next · <kbd>P</kbd> previous · <kbd>D</kbd> damage · <kbd>U</kbd> undo</span>
+        </div>
       </header>
 
       <RandomEncounterBuilder
@@ -905,7 +985,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
       <AddCombatants currentNpc={currentNpc} savedNpcs={savedNpcs} dispatch={dispatch} open={state.combatants.length === 0} />
 
       <div class={`encounter-workspace ${selected ? 'has-inspector' : ''}`}>
-        <div class="initiative-panel panel">
+        <div class={`initiative-panel panel density-${density}`}>
           <div class="initiative-table-scroll">
             <div class="initiative-table">
               <header class="initiative-header">
@@ -916,6 +996,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
                   key={combatant.id}
                   combatant={combatant}
                   active={combatant.id === state.activeCombatantId}
+                  onDeck={ordered.length > 1 && combatant.id === onDeckId && combatant.id !== state.activeCombatantId}
                   selected={combatant.id === selectedId}
                   dispatch={dispatch}
                   onSelect={() => setSelectedId(combatant.id)}
@@ -925,7 +1006,15 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
               </div>
             </div>
           </div>
-          {ordered.length > 0 && <footer class="initiative-footer"><span>{ordered.length} combatants</span><button type="button" onClick={() => dispatch({ type: 'reset-rounds' })}>Reset rounds</button><button type="button" class="danger-text" onClick={() => window.confirm('Clear every combatant from this encounter?') && dispatch({ type: 'clear' })}>Clear encounter</button></footer>}
+          {ordered.length > 0 && <footer class="initiative-footer">
+            <span>{ordered.length} combatants</span>
+            <div class="density-toggle" role="group" aria-label="Row density">
+              <button type="button" class={density === 'compact' ? 'active' : ''} aria-pressed={density === 'compact'} title="Fit more combatants on screen" onClick={() => setDensity('compact')}>Compact</button>
+              <button type="button" class={density === 'comfortable' ? 'active' : ''} aria-pressed={density === 'comfortable'} title="Larger touch targets and text" onClick={() => setDensity('comfortable')}>Roomy</button>
+            </div>
+            <button type="button" onClick={() => dispatch({ type: 'reset-rounds' })}>Reset rounds</button>
+            <button type="button" class="danger-text" onClick={() => window.confirm('Clear every combatant from this encounter?') && dispatch({ type: 'clear' })}>Clear encounter</button>
+          </footer>}
         </div>
         {selected && <CombatantInspector combatant={selected} dispatch={dispatch} onClose={() => setSelectedId(null)} onDamage={() => setDamageId(selected.id)} onResolveAttack={(attackId) => setAttackResolver({ combatantId: selected.id, attackId })} />}
       </div>

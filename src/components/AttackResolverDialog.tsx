@@ -102,7 +102,6 @@ export function AttackResolverDialog({
 
           {!attack.rangeProfile && <div class="resolver-warning"><strong>Range profile not mapped.</strong><span>Use the full range reference and resolve the attack manually.</span><button type="button" onClick={onOpenRangeReference}>Open Range DVs</button></div>}
           {empty && <div class="resolver-warning danger"><strong>Weapon empty.</strong><span>Reload before resolving this attack.</span></div>}
-          <p class="resolver-rule">Both checks use the RED critical d10: a natural 10 adds one extra d10; a natural 1 subtracts one extra d10. The attacker must beat the selected defense.</p>
         </div>
 
         <footer>

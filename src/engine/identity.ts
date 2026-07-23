@@ -5,6 +5,8 @@ import type { Catalog, GenerateOptions, InventoryNode, Item, Npc, Rank, Role } f
 import type { NumpyRandom } from './random';
 import { pythonRound } from './random';
 
+const NAME_GENERATION_ATTEMPTS = 5;
+
 function fakerForLocale(locale: string): Faker {
   const exact = (allFakers as unknown as Record<string, Faker>)[locale];
   if (exact) return exact;
@@ -12,6 +14,22 @@ function fakerForLocale(locale: string): Faker {
   const related = Object.entries(allFakers as unknown as Record<string, Faker>)
     .find(([key]) => key.startsWith(`${language}_`) || key === language);
   return related?.[1] ?? fakerEN_US;
+}
+
+function transliterateNamePart(value: string): string | null {
+  // unidecode-plus represents characters missing from its lookup tables as
+  // underscores. Do not let those implementation placeholders become a name.
+  const transliterated = unidecode(value, { smartSpacing: true })
+    .replace(/_+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return /[a-z0-9]/i.test(transliterated) ? transliterated : null;
+}
+
+function generatedName(faker: Faker, sex: 'male' | 'female'): { name: string; surname: string } | null {
+  const name = transliterateNamePart(faker.person.firstName(sex));
+  const surname = transliterateNamePart(faker.person.lastName(sex));
+  return name && surname ? { name, surname } : null;
 }
 
 export function generateIdentity(
@@ -28,8 +46,20 @@ export function generateIdentity(
   const faker = fakerForLocale(nationality);
   faker.seed(seed);
   const sex = npc.sex ? 'male' : 'female';
-  npc.name = unidecode(faker.person.firstName(sex), { smartSpacing: true });
-  npc.surname = unidecode(faker.person.lastName(sex), { smartSpacing: true });
+  let identity: { name: string; surname: string } | null = null;
+  for (let attempt = 0; attempt < NAME_GENERATION_ATTEMPTS && !identity; attempt += 1) {
+    identity = generatedName(faker, sex);
+  }
+
+  if (!identity) {
+    fakerEN_US.seed(seed);
+    identity = generatedName(fakerEN_US, sex);
+  }
+
+  // The English Faker data is ASCII, but keep a final invariant at this
+  // boundary so a future dependency-data regression still cannot emit blanks.
+  npc.name = identity?.name ?? (npc.sex ? 'Alex' : 'Morgan');
+  npc.surname = identity?.surname ?? 'Reed';
 }
 
 function enumName(value: string | null): string | null {

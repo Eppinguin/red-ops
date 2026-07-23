@@ -883,12 +883,18 @@ details p { margin: 0; padding: 0 11px 11px; color: var(--muted); font-size: var
 .round-display span, .round-display small { display: block; color: var(--muted); text-transform: uppercase; font-size: var(--fs-2xs); }
 .round-display strong { display: block; color: var(--acid); font-size: 1.8rem; line-height: 1.1; }
 .round-display small { overflow: hidden; max-width: 120px; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+.round-display small.has-active { color: var(--ink); font-weight: 700; }
+.round-display small.on-deck-name { margin-top: 2px; color: var(--muted-2); }
 .encounter-toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .encounter-toolbar button { min-height: 34px; }
 .encounter-event { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 14px; min-width: 0; padding: 8px 10px; border-left: 3px solid var(--cyan); color: #d7fbff; background: rgba(32,233,255,.055); font-size: var(--fs-xs); }
 .encounter-event strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .encounter-event > span { flex: 0 0 auto; color: var(--muted); white-space: nowrap; }
 .encounter-event.critical-event { border-left-color: var(--red); color: #ffc1ca; background: rgba(255,79,104,.075); }
+/* Idle keeps the shortcut legend visible without reading as a fresh event. */
+.encounter-event.idle { border-left-color: var(--line-strong); color: var(--muted); background: rgba(255,255,255,.014); }
+.encounter-event.idle strong { font-weight: 500; }
+.shortcut-hints { flex: 0 0 auto; }
 kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-width: 2px; background: #030605; color: var(--ink); font-size: var(--fs-2xs); }
 
 .encounter-add { margin: 0; background: var(--surface-0); }
@@ -905,11 +911,16 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .encounter-workspace.has-inspector { grid-template-columns: minmax(760px,1fr) minmax(430px,500px); }
 .initiative-panel { min-width: 0; overflow: hidden; }
 .initiative-table-scroll { max-height: min(740px, calc(100vh - 278px)); overflow: auto; overscroll-behavior: contain; }
-.initiative-table { min-width: 1350px; }
+/*
+ * The turn order must never scroll horizontally: at the table the GM reads and
+ * clicks across a whole row, so Damage/Actions have to stay reachable at laptop
+ * widths. Columns shrink instead, and the stacked layout takes over below.
+ */
+.initiative-table { min-width: 0; }
 .initiative-header, .combatant-row {
   display: grid;
-  grid-template-columns: 34px 64px minmax(210px,1fr) minmax(150px,.78fr) 92px minmax(170px,.9fr) minmax(360px,1.6fr) 150px;
-  gap: 7px;
+  grid-template-columns: 30px 58px minmax(132px,1.1fr) minmax(118px,.7fr) 108px minmax(112px,.75fr) minmax(240px,1.45fr) minmax(112px,124px);
+  gap: 6px;
   align-items: center;
 }
 .initiative-header {
@@ -944,14 +955,50 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .combatant-row.selected { box-shadow: inset 0 0 0 1px var(--cyan); }
 .combatant-row.active-turn { border-left-width: 6px; background: linear-gradient(90deg, rgba(166,255,0,.14), rgba(var(--side-rgb), .055) 34%, transparent 68%); }
 .combatant-row.active-turn::after { content: "ACTIVE"; position: absolute; top: 4px; right: 4px; color: rgba(166,255,0,.27); letter-spacing: .12em; font-size: .58rem; }
+/* The next combatant is marked quietly so the GM can cue that player early. */
+.combatant-row.on-deck { border-left-style: dashed; }
+.combatant-row.on-deck::after { content: "NEXT"; position: absolute; top: 4px; right: 4px; color: rgba(32,233,255,.3); letter-spacing: .12em; font-size: .58rem; }
+.turn-marker { color: var(--muted-2); }
+.combatant-row.active-turn .turn-marker { color: var(--acid); }
+.combatant-row.on-deck .turn-marker { color: var(--cyan); }
+
+/*
+ * Wound state is carried on the right edge of the row so it reads from across
+ * the table without competing with the disposition colour on the left edge.
+ */
+.combatant-row.wound-serious { box-shadow: inset -4px 0 0 rgba(255,194,71,.75); }
+.combatant-row.wound-mortal { box-shadow: inset -4px 0 0 var(--red); background: linear-gradient(90deg, rgba(var(--side-rgb),.045), rgba(255,79,104,.07) 72%); }
+.combatant-row.wound-mortal.selected { box-shadow: inset -4px 0 0 var(--red), inset 0 0 0 1px var(--cyan); }
+.combatant-row.wound-serious.selected { box-shadow: inset -4px 0 0 rgba(255,194,71,.75), inset 0 0 0 1px var(--cyan); }
+.combatant-row.wound-mortal .combatant-name strong { color: #ffb3bf; }
+
+/* Compact is the table default; Roomy trades rows on screen for bigger targets. */
+.density-compact .combatant-row { min-height: 74px; padding: 6px 8px; }
+.density-compact .attack-control.compact { padding: 5px; gap: 5px; }
+.density-compact .attack-control-buttons button { min-height: 30px; }
+.density-compact .hp-meter small,
+.density-compact .initiative-cell small { display: none; }
+.density-compact .row-actions button { min-height: 28px; }
+.density-comfortable .combatant-row { min-height: 96px; padding: 10px; }
+.density-comfortable .combatant-name strong { font-size: var(--fs-md); }
+.density-comfortable .row-actions button { min-height: 36px; }
+.density-toggle { display: flex; gap: 0; border: 1px solid var(--line); }
+.density-toggle button { min-height: 28px; padding: 4px 9px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--muted); font-size: var(--fs-2xs); }
+.density-toggle button:last-child { border-right: 0; }
+.density-toggle button.active { color: var(--acid) !important; background: rgba(166,255,0,.09) !important; box-shadow: inset 0 -2px var(--acid); }
 .turn-marker { width: 30px; min-height: 34px; padding: 0; color: var(--acid); font-size: 1rem; }
 .initiative-cell { display: grid; gap: 2px; }
 .initiative-cell small { color: var(--muted); text-align: center; font-size: var(--fs-2xs); }
 .compact-number { min-height: 34px; padding: 5px; text-align: center; font-size: var(--fs-sm); }
-.combatant-name-cell { display: grid; grid-template-columns: minmax(0,1fr) 29px; gap: 4px; align-items: center; min-width: 0; }
-.combatant-name { display: block; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; text-align: left; }
+.combatant-name-cell { display: grid; gap: 3px; align-items: center; min-width: 0; }
+/* Name and rename control share one line, with the ✎ tucked directly against
+   the end of the text instead of pinned to the far edge of the column. */
+.combatant-name-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.combatant-name { display: block; flex: 0 1 auto; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; text-align: left; }
 .combatant-name:hover { background: transparent !important; color: var(--side) !important; }
 .combatant-name strong { display: block; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); }
+.combatant-meta-button { display: block; width: 100%; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; text-align: left; }
+.combatant-meta-button:hover { background: transparent !important; }
 .combatant-meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 5px; }
 .combatant-meta em { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-style: normal; font-size: var(--fs-2xs); }
 .combatant-team-badge, .combatant-side-badge, .random-team-badge {
@@ -967,7 +1014,20 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .combatant-side-badge.neutral { border-color: rgba(var(--neutral-rgb),.42); color: var(--neutral); }
 .combatant-side-badge.ally { border-color: rgba(var(--ally-rgb),.42); color: var(--ally); }
 .combatant-side-badge.player { border-color: rgba(var(--player-rgb),.42); color: var(--player); }
-.rename-combatant-button { min-height: 28px; height: 28px; padding: 0; }
+/* Reads as an affordance attached to the name: quiet until hovered, then it
+   picks up the cyan interactive colour used elsewhere for editable data. */
+.rename-combatant-button {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-color: var(--line);
+  color: var(--muted-2);
+  font-size: .78rem;
+  line-height: 1;
+}
+.rename-combatant-button:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); }
 .combatant-name-edit { min-height: 34px; padding: 5px 7px; }
 
 .hp-meter { display: grid; gap: 4px; min-width: 0; }
@@ -984,9 +1044,16 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .hp-meter.large .hp-meter-track { height: 10px; }
 .hp-meter.large .compact-number { font-size: 1rem; }
 
-.armor-cell { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.armor-cell label { display: grid; grid-template-columns: 18px 1fr; align-items: center; }
-.armor-cell label > span { margin: 0; color: var(--muted); text-align: center; }
+/* SP is a two-digit value the GM edits mid-combat, so the input keeps a real
+   minimum width and the B/H marker is a narrow prefix rather than a column. */
+.armor-cell { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; min-width: 0; }
+.armor-cell label { display: grid; grid-template-columns: 11px minmax(0,1fr); gap: 3px; align-items: center; min-width: 0; }
+.armor-cell label > span { margin: 0; color: var(--muted-2); text-align: left; font-size: .62rem; }
+/* The spinner arrows cost ~14px that a 1–3 digit SP value needs more; the field
+   is typed into, and ± is available in the inspector. */
+.armor-cell .compact-number { min-width: 0; padding-inline: 3px; -moz-appearance: textfield; appearance: textfield; }
+.armor-cell .compact-number::-webkit-outer-spin-button,
+.armor-cell .compact-number::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; appearance: none; }
 .row-status { display: flex; flex-wrap: wrap; gap: 4px; }
 .row-status span, .status-clear {
   display: inline-flex;
@@ -1001,9 +1068,13 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .status-clear { border-color: rgba(84,245,155,.25); color: var(--green); background: rgba(84,245,155,.04); }
 .row-attacks { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; }
 .no-attacks { color: var(--muted); font-size: var(--fs-xs); }
-.row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+/* Damage and Stat block are per-turn actions; Remove is rare, so it shrinks to
+   an icon instead of claiming a full-width row of its own. */
+.row-actions { display: grid; grid-template-columns: 1fr 26px; gap: 4px; }
 .row-actions button { min-height: 31px; padding: 5px; font-size: .66rem; }
-.row-actions .remove-combatant-button { grid-column: 1 / -1; color: #ff8799; }
+.row-actions .damage-button { grid-column: 1; }
+.row-actions .remove-combatant-button { grid-column: 2; grid-row: 1 / span 2; padding: 0; color: var(--muted-2); font-size: .8rem; }
+.row-actions .remove-combatant-button:hover:not(:disabled) { border-color: rgba(255,79,104,.6); color: #ff8799; }
 .damage-button { border-color: rgba(255,79,104,.45); color: #ff9cab; }
 .initiative-footer { display: flex; justify-content: flex-end; align-items: center; gap: 5px; padding: 7px 9px; border-top: 1px solid var(--line); background: #050a08; }
 .initiative-footer > span { margin-right: auto; color: var(--muted); font-size: var(--fs-xs); }
@@ -1012,14 +1083,21 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 
 /* attack controls */
 .attack-control { display: grid; gap: 5px; min-width: 0; padding: 8px; border: 1px solid var(--line); background: #07100d; }
-.attack-control.compact { grid-template-columns: minmax(0,1fr) auto; gap: 6px; padding: 6px; }
+/* Compact rows stack the weapon name above the roll buttons: the ATK button
+   already carries the bonus, so the separate skill line is redundant there. */
+.attack-control.compact { grid-template-columns: minmax(0,1fr); gap: 4px; padding: 5px 6px; }
+.attack-control.compact .attack-control-base { display: none; }
+/* ROF/AF are reference detail carried by the tooltip; only the Range·DV chip is
+   actionable, so it is the one fact that survives into a compact row. */
+.density-compact .attack-control.compact .attack-control-facts > span { display: none; }
+.density-compact .attack-control.compact .attack-control-facts:empty { display: none; }
 .attack-control-heading { min-width: 0; }
 .attack-control-heading strong { display: block; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); }
 .attack-control-heading span { display: block; margin-top: 2px; color: var(--cyan); font-size: .65rem; }
 .attack-control-base { color: var(--cyan); }
 .attack-control-facts { display: flex; flex-wrap: wrap; gap: 4px; color: var(--muted); font-size: .62rem; }
 .attack-control-buttons { display: grid; grid-template-columns: repeat(2, minmax(44px,1fr)); gap: 4px; align-items: stretch; }
-.attack-control.compact .attack-control-buttons { min-width: 122px; }
+.attack-control.compact .attack-control-buttons { min-width: 0; }
 .attack-control-buttons button { min-height: 34px; padding: 4px 6px; }
 .attack-control-buttons span { display: block; color: var(--muted); font-size: .56rem; }
 .attack-control-buttons strong { display: block; color: var(--acid); font-size: .72rem; }
@@ -1104,6 +1182,15 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .inspector-list { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: var(--fs-xs); }
 .inspector-line { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: 5px; }
 .ranged-defense-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+/* Whether a defender may dodge bullets changes how the attack resolves, so the
+   ready state is colour-coded rather than left as plain text. */
+.dodge-readiness { grid-column: 1 / -1; display: grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-left: 3px solid var(--muted-2); background: #07100d; }
+.dodge-readiness strong { color: var(--muted); font-size: var(--fs-xs); }
+.dodge-readiness span { color: var(--muted-2); font-size: .68rem; }
+.dodge-readiness.ready { border-left-color: var(--cyan); background: rgba(32,233,255,.045); }
+.dodge-readiness.ready strong { color: var(--cyan); }
+.dodge-readiness.ready span { color: var(--ink-soft); }
+
 .danger-zone { border-color: rgba(255,79,104,.25) !important; }
 .danger-zone button { border-color: rgba(255,79,104,.4); color: #ff97a7; }
 .official-source-notes { color: var(--muted); font-size: var(--fs-xs); }
@@ -1304,6 +1391,38 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .toggles { grid-template-columns: repeat(4,1fr); }
   .encounter-command { grid-template-columns: minmax(0,1fr) 100px; }
   .encounter-toolbar { grid-column: 1 / -1; justify-content: flex-start; }
+  /*
+   * Below the width where eight columns stay legible, each combatant becomes a
+   * stacked card. The turn order still reads top to bottom and nothing requires
+   * sideways scrolling to reach.
+   */
+  .initiative-header { display: none; }
+  .combatant-row {
+    grid-template-columns: 30px 76px 180px minmax(0,1fr) minmax(112px,auto);
+    grid-template-areas:
+      "marker init name name actions"
+      "marker hp hp hp actions"
+      "armor armor armor status status"
+      "attacks attacks attacks attacks attacks";
+    gap: 7px 8px;
+    align-items: start;
+  }
+  .combatant-row > .turn-marker { grid-area: marker; align-self: center; }
+  .combatant-row > .initiative-cell { grid-area: init; }
+  /* Number fields size to their content instead of stretching across the card. */
+  .combatant-row > .hp-meter .hp-meter-values { grid-template-columns: 72px auto 72px; justify-content: start; }
+  .combatant-row > .armor-cell { grid-template-columns: 1fr 1fr; }
+  .combatant-row > .combatant-name-cell { grid-area: name; }
+  .combatant-row > .hp-meter { grid-area: hp; }
+  .combatant-row > .armor-cell { grid-area: armor; }
+  .combatant-row > .row-status,
+  .combatant-row > .status-clear { grid-area: status; align-self: center; }
+  .combatant-row > .row-attacks,
+  .combatant-row > .no-attacks { grid-area: attacks; }
+  .combatant-row > .row-actions { grid-area: actions; }
+  .density-compact .combatant-row,
+  .density-comfortable .combatant-row { min-height: 0; padding: 10px 9px; }
+  .density-compact .hp-meter small { display: block; }
   .random-encounter-controls { grid-template-columns: 100px 160px minmax(200px,1fr) auto; }
   .random-guidance-toggle { grid-column: 1 / -2; }
   .random-subroll-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -1361,6 +1480,23 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .tab-content { padding: 9px; }
   .reference-hero, .random-result-copy { padding: 13px; }
   .encounter-command { grid-template-columns: 1fr; }
+  /* Phone width: drop to two columns and let the attack pair stack. */
+  .combatant-row {
+    grid-template-columns: 26px minmax(0,1fr);
+    grid-template-areas:
+      "marker name"
+      "init hp"
+      "armor armor"
+      "status status"
+      "attacks attacks"
+      "actions actions";
+  }
+  .combatant-row > .row-actions { grid-template-columns: 1fr 1fr 34px; grid-template-areas: "damage statblock remove"; }
+  .combatant-row > .row-actions .damage-button { grid-area: damage; }
+  .combatant-row > .row-actions .statblock-button { grid-area: statblock; }
+  .combatant-row > .row-actions .remove-combatant-button { grid-area: remove; grid-row: auto; }
+  .combatant-row > .row-attacks { grid-template-columns: 1fr; }
+  .combatant-row > .hp-meter .hp-meter-values { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
   .round-display { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 8px; text-align: left; }
   .round-display strong { font-size: 1.4rem; }
   .encounter-toolbar { grid-column: 1; }
@@ -1395,6 +1531,25 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 
 /* Small utility stacks used inside the inspector. */
 .inline-stack, .conditions { display: grid; gap: 6px; }
+/* Generator overview condition rows: mark, label, and source each need their
+   own slot or the text runs together. */
+.conditions { padding: 10px; }
+.conditions > div { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: 8px; align-items: baseline; }
+.conditions > div > i { color: var(--muted-2); font-style: normal; text-align: center; }
+.conditions > div.ok > i { color: var(--green); }
+.conditions > div > span { min-width: 0; color: var(--muted); font-size: var(--fs-xs); }
+.conditions > div.ok > span { color: var(--ink-soft); }
+.conditions > div > span > small { display: block; margin-top: 2px; color: var(--muted-2); font-size: var(--fs-2xs); }
+
+/* Overview character-check card: severity is carried by the left edge so the
+   result reads before the text does. */
+.validation-summary { display: grid; gap: 7px; justify-items: start; padding: 12px; border-left: 3px solid var(--green); }
+.validation-summary > strong { color: var(--green); font-size: var(--fs-sm); }
+.validation-summary > p { margin: 0; color: var(--muted); font-size: var(--fs-xs); }
+.validation-summary.has-warnings { border-left-color: var(--amber); background: rgba(255,194,71,.04); }
+.validation-summary.has-warnings > strong { color: var(--amber); }
+.validation-summary.has-errors { border-left-color: var(--red); background: rgba(255,79,104,.045); }
+.validation-summary.has-errors > strong { color: var(--red); }
 .custom-critical { display: grid; gap: 6px; margin-top: 8px; }
 .attack-roll-button { border-color: rgba(166,255,0,.3); }
 
