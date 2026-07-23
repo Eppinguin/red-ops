@@ -92,6 +92,27 @@ export interface OfficialCombatantOptions {
   tactics?: string;
 }
 
+export interface GenericNpcTemplateSummary {
+  id: OfficialNpcTemplateId;
+  name: string;
+  tier: OfficialNpcTier;
+  sourceLabel: string;
+  sourcePage: string;
+}
+
+const GENERIC_NPC_TEMPLATE_IDS = [
+  'bodyguard',
+  'boosterganger',
+  'road-ganger',
+  'security-operative',
+  'netrunner',
+  'reclaimer-chief',
+  'security-officer',
+  'outrider',
+  'pyro',
+  'cyberpsycho',
+] as const satisfies readonly OfficialNpcTemplateId[];
+
 function id(prefix: string): string {
   return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
@@ -444,6 +465,20 @@ export function officialNpcTemplateIds(): OfficialNpcTemplateId[] {
 
 export function officialNpcTemplate(templateId: OfficialNpcTemplateId): Readonly<OfficialNpcTemplate> {
   return TEMPLATES[templateId];
+}
+
+/** Core generic NPC stat blocks that can be added without encounter-specific patches or loadout choices. */
+export function genericNpcTemplates(): GenericNpcTemplateSummary[] {
+  return GENERIC_NPC_TEMPLATE_IDS.map((templateId) => {
+    const template = TEMPLATES[templateId];
+    return {
+      id: template.id,
+      name: template.name,
+      tier: template.tier,
+      sourceLabel: template.sourceLabel ?? 'Cyberpunk RED Core Rulebook · Mooks and Grunts',
+      sourcePage: template.sourcePage,
+    };
+  });
 }
 
 export function createOfficialCombatant(templateId: OfficialNpcTemplateId, options: OfficialCombatantOptions = {}): EncounterCombatant {

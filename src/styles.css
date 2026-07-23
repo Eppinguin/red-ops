@@ -1196,6 +1196,10 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .add-combatant-grid section { padding: 11px; border: 1px solid var(--line); background: var(--surface-1); }
 .add-combatant-grid h3 { margin: 0; color: var(--acid); text-transform: uppercase; font-size: var(--fs-xs); }
 .add-combatant-grid p { min-height: 40px; margin: 6px 0 10px; color: var(--muted); font-size: var(--fs-xs); }
+.add-combatant-grid .generic-npc-add { grid-column: 1 / -1; }
+.generic-npc-add p { min-height: 0; }
+.generic-npc-fields { display: grid; grid-template-columns: minmax(220px,1fr) 130px 90px auto; gap: 5px; }
+.generic-npc-fields select, .generic-npc-fields input { min-width: 0; min-height: 37px; padding: 7px; font-size: var(--fs-xs); }
 .saved-npc-add { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 5px; margin-top: 7px; }
 .pc-fields { display: grid; grid-template-columns: 2fr repeat(5,1fr); gap: 5px; margin-bottom: 7px; }
 .pc-fields input, .saved-npc-add select { min-width: 0; min-height: 37px; padding: 7px; font-size: var(--fs-xs); }
@@ -1791,6 +1795,7 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .encounter-toolbar { grid-column: 1; }
   .pc-fields { grid-template-columns: 1fr 1fr; }
   .pc-fields input:first-child { grid-column: 1 / -1; }
+  .generic-npc-fields { grid-template-columns: 1fr 1fr; }
   .random-result-hero { grid-template-columns: 1fr; }
   .random-roll-badge { display: flex; justify-content: flex-start; gap: 10px; border-right: 0; border-bottom: 1px solid rgba(var(--orange-rgb),.35); }
   .random-group-card > header { flex-direction: column; }

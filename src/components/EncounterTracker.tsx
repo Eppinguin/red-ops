@@ -24,6 +24,11 @@ import {
   isSeriouslyWounded,
   sortCombatants,
 } from '../encounter/model';
+import {
+  createOfficialCombatant,
+  genericNpcTemplates,
+  type OfficialNpcTemplateId,
+} from '../encounter/officialNpcs';
 import { loadEncounterWorkspace, persistEncounterWorkspace } from '../encounter/storage';
 import { rangeDv, validRangeBands } from '../encounter/rangeDvs';
 import { AttackResolverDialog } from './AttackResolverDialog';
@@ -736,9 +741,10 @@ function CombatantRow({ combatant, active, onDeck, selected, dispatch, onSelect,
   );
 }
 
-function AddCombatants({ currentNpc, savedNpcs, dispatch, open }: {
+function AddCombatants({ currentNpc, savedNpcs, referenceEntries, dispatch, open }: {
   currentNpc: GeneratedNpcView | null;
   savedNpcs: readonly SavedNpcRecord[];
+  referenceEntries: readonly CatalogEntry[];
   dispatch: (action: EncounterAction) => void;
   open: boolean;
 }) {
@@ -749,6 +755,25 @@ function AddCombatants({ currentNpc, savedNpcs, dispatch, open }: {
   const [pcBody, setPcBody] = useState('');
   const [pcHead, setPcHead] = useState('');
   const [savedId, setSavedId] = useState('');
+  const [genericTemplateId, setGenericTemplateId] = useState<OfficialNpcTemplateId | ''>('');
+  const [genericSide, setGenericSide] = useState<EncounterCombatant['side']>('enemy');
+  const [genericCount, setGenericCount] = useState('1');
+  const genericTemplates = useMemo(genericNpcTemplates, []);
+
+  const addGenericNpcs = () => {
+    if (!genericTemplateId) return;
+    const count = Math.max(1, Math.min(20, Math.trunc(Number(genericCount)) || 1));
+    const template = genericTemplates.find((candidate) => candidate.id === genericTemplateId);
+    if (!template) return;
+    const combatants = Array.from({ length: count }, (_, index) => createOfficialCombatant(genericTemplateId, {
+      name: count > 1 ? `${template.name} ${index + 1}` : template.name,
+      side: genericSide,
+      referenceEntries,
+      notes: 'Added manually from the generic NPC statblock library.',
+    }));
+    dispatch({ type: 'add-combatants', combatants, source: `${template.name} stat block` });
+    setGenericCount('1');
+  };
 
   const addPc = () => {
     if (!pcName.trim()) return;
@@ -767,6 +792,24 @@ function AddCombatants({ currentNpc, savedNpcs, dispatch, open }: {
     <details class="encounter-add" open={open}>
       <summary>Add combatants</summary>
       <div class="add-combatant-grid">
+        <section class="generic-npc-add">
+          <h3>Generic NPC statblock</h3>
+          <p>Add any core generic NPC directly, using the same complete statblock used by random encounters.</p>
+          <div class="generic-npc-fields">
+            <select aria-label="Generic NPC statblock" value={genericTemplateId} onChange={(event: SelectEvent) => setGenericTemplateId(event.currentTarget.value as OfficialNpcTemplateId | '')}>
+              <option value="">Choose statblock…</option>
+              {genericTemplates.map((template) => <option key={template.id} value={template.id}>{template.name} · {template.tier}</option>)}
+            </select>
+            <select aria-label="Generic NPC disposition" value={genericSide} onChange={(event: SelectEvent) => setGenericSide(event.currentTarget.value as EncounterCombatant['side'])}>
+              <option value="enemy">Enemy</option>
+              <option value="neutral">Neutral</option>
+              <option value="ally">Ally</option>
+              <option value="player">Player</option>
+            </select>
+            <input aria-label="Number of generic NPCs" type="number" min="1" max="20" value={genericCount} onInput={(event: InputEvent) => setGenericCount(event.currentTarget.value)} />
+            <button type="button" class="primary-action" disabled={!genericTemplateId} onClick={addGenericNpcs}>Add statblock</button>
+          </div>
+        </section>
         <section>
           <h3>Generated NPC</h3>
           <p>Add the current operative or a saved NPC. Each copy gets independent HP, armor, ammo, notes, and initiative.</p>
@@ -982,7 +1025,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
         onCreatePrepared={createPreparedFromRandom}
       />
 
-      <AddCombatants currentNpc={currentNpc} savedNpcs={savedNpcs} dispatch={dispatch} open={state.combatants.length === 0} />
+      <AddCombatants currentNpc={currentNpc} savedNpcs={savedNpcs} referenceEntries={referenceEntries} dispatch={dispatch} open={state.combatants.length === 0} />
 
       <div class={`encounter-workspace ${selected ? 'has-inspector' : ''}`}>
         <div class={`initiative-panel panel density-${density}`}>
@@ -1002,7 +1045,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
                   onSelect={() => setSelectedId(combatant.id)}
                   onDamage={() => setDamageId(combatant.id)}
                   onResolveAttack={(attackId) => setAttackResolver({ combatantId: combatant.id, attackId })}
-                />) : <div class="encounter-empty"><strong>No combatants yet.</strong><p>Add the generated NPC, a saved NPC, or a minimal player record above.</p></div>}
+                />) : <div class="encounter-empty"><strong>No combatants yet.</strong><p>Add a generic statblock, generated NPC, saved NPC, or minimal player record above.</p></div>}
               </div>
             </div>
           </div>
