@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "check": "npm run typecheck && npm test",
+    "check": "pnpm run typecheck && pnpm test",
     "preview": "vite preview",
     "test": "vitest run && node --test scripts/__tests__/*.test.mjs",
     "test:watch": "vitest",
@@ -35,6 +35,6 @@
   },
   "upstream": {
     "repository": "n0lavar/cp_red_npc_generator",
-    "commit": "c3dbce65aeb0c812ceb9300ddb138ad2c7f0a8dd"
+    "commit": "dfd4c08c4295c3d34f11a6c75c4d3ae5792ef2a4"
   }
 }

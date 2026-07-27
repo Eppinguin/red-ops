@@ -1,0 +1,211 @@
+[
+  {
+    "name": "Hardened Shielding (Cyber Arm)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Hardened Shielding (Cyber Leg)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Plastic Covering (Cyber Arm)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Plastic Covering (Cyber Leg)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Realskinn Covering (Cyber Arm)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Realskinn Covering (Cyber Leg)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Superchrome® Covering (Cyber Arm)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 1000,
+    "modifiers": [
+      {
+        "name": "WardrobeStyle",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Superchrome® Covering (Cyber Leg)",
+    "tags": [
+      "Covering"
+    ],
+    "type": "cyberware",
+    "price": 1000,
+    "modifiers": [
+      {
+        "name": "WardrobeStyle",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Extra-Jointed Cyberarm Upgrade",
+    "type": "cyberware",
+    "price": 500,
+    "modifiers": [
+      {
+        "name": "Contortionist",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 4,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Extra-Jointed Cyberleg Upgrade",
+    "type": "cyberware",
+    "price": 500,
+    "modifiers": [
+      {
+        "name": "Contortionist",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 4,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Reinforced Cyberarm Upgrade",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Reinforced Cyberleg Upgrade",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Sponsored Covering (Cyberarm)",
+    "type": "cyberware",
+    "price": 50,
+    "tags": [
+      "Covering"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 0
+  },
+  {
+    "name": "Sponsored Covering (Cyberleg)",
+    "type": "cyberware",
+    "price": 50,
+    "tags": [
+      "Covering"
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 0
+  }
+]

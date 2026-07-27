@@ -129,13 +129,18 @@ function itemMechanics(item: ItemData): MechanicsSummary {
     };
   }
   if (item.type === 'armor') {
-    const locations = item.name?.match(/^(Head|Body):/i)?.[1];
+    const legacyLocation = item.name?.match(/^(Head|Body):/i)?.[1];
+    const locations = item.armor_locations?.length
+      ? item.armor_locations.map((location) => location.toLowerCase())
+      : legacyLocation
+        ? [legacyLocation.toLowerCase()]
+        : [];
     const penalty = Math.min(0, ...(item.modifiers ?? []).map((modifier) => modifier.simple ?? 0));
     return {
       kind: 'armor',
       stoppingPower: item.armor_class ?? undefined,
       penalty: penalty || undefined,
-      locations: locations ? [locations.toLowerCase()] : [],
+      locations: unique(locations),
     };
   }
   if (item.type === 'cyberware') {

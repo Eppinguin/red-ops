@@ -4,7 +4,7 @@
 
 - Project: `n0lavar/cp_red_npc_generator`
 - Source: https://github.com/n0lavar/cp_red_npc_generator
-- Pinned source commit: `c3dbce65aeb0c812ceb9300ddb138ad2c7f0a8dd`
+- Pinned source commit: `dfd4c08c4295c3d34f11a6c75c4d3ae5792ef2a4`
 - License: GNU General Public License v3.0
 
 This application translates the upstream Python generator behavior into TypeScript and consumes its configuration data.

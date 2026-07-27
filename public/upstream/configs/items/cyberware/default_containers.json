@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Meatbody",
+    "type": "cyberware",
+    "default_hidden": true,
+    "container_capacity": 999
+  },
+  {
+    "name": "Fashionware",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 7
+  },
+  {
+    "name": "Neuralware",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 1
+  },
+  {
+    "name": "Eye Sockets",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 2
+  },
+  {
+    "name": "Auditory System",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 1
+  },
+  {
+    "name": "Internal Cyberware",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 7
+  },
+  {
+    "name": "External Cyberware",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 7
+  },
+  {
+    "name": "Shoulders",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 2
+  },
+  {
+    "name": "Hips",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 2
+  },
+  {
+    "name": "Borgware",
+    "type": "cyberware",
+    "default_hidden": true,
+    "required_containers": [
+      "Meatbody"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "container_capacity": 999
+  }
+]

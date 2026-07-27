@@ -1,0 +1,291 @@
+[
+  {
+    "name": "AudioVox",
+    "type": "cyberware",
+    "price": 500,
+    "modifiers": [
+      {
+        "name": "Acting",
+        "simple": 2
+      },
+      {
+        "name": "PlayInstrument",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Contraceptive Implant",
+    "type": "cyberware",
+    "price": 10,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 0
+  },
+  {
+    "name": "Enhanced Antibodies",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Cybersnake",
+    "type": "cyberware",
+    "price": 1000,
+    "unique_tags": [
+      "VeryHeavyMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Gills",
+    "type": "cyberware",
+    "price": 1000,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Grafted Muscle and Bone Lace",
+    "type": "cyberware",
+    "price": 1000,
+    "modifiers": [
+      {
+        "name": "BODY",
+        "complicated": [
+          "new_value = min(start_value + current_modifier + 2, 10)",
+          "new_modifier = new_value - start_value"
+        ]
+      }
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Independent Air Supply",
+    "type": "cyberware",
+    "price": 1000,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "AirProtection"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Midnight Lady Sexual Implant",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "SexualImplant"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Mr. Studd Sexual Implant",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "SexualImplant"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Nasal Filters",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "AirProtection"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Radar/Sonar Implant",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Toxin Binders",
+    "type": "cyberware",
+    "price": 100,
+    "modifiers": [
+      {
+        "name": "ResistTortureDrugs",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Vampyres",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "LightMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "quality": "excellent",
+    "damage": "1d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Hardened Shielding (Internal)",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "RacerBracer",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Trauma Response Nanomatrix",
+    "type": "cyberware",
+    "price": 1000,
+    "tags": [
+      "Action"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "required_cyberware": [
+      "Subdermal Armor"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Appetite Controller",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "required_cyberware": [
+      "Biomonitor"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "NeuTongue",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Bodyweight AutoInjector",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "Airhypo"
+    ],
+    "required_containers": [
+      "Internal Cyberware"
+    ],
+    "required_cyberware": [
+      "Biomonitor"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  }
+]

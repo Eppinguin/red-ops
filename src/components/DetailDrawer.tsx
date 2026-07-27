@@ -1,6 +1,7 @@
 import type { TargetedEvent } from 'preact';
-import type { CatalogConflict, CatalogEntry, MechanicsSummary } from '../content/types';
+import type { CatalogEntry, MechanicsSummary } from '../content/types';
 import { GlossaryTerm } from './GlossaryTerm';
+import { useScrollLock } from './useScrollLock';
 
 export interface SelectedReference {
   entry: CatalogEntry;
@@ -58,10 +59,11 @@ function Mechanics({ mechanics }: { mechanics: MechanicsSummary }) {
   </dl>;
 }
 
-export function DetailDrawer({ selected, conflicts, onClose }: { selected: SelectedReference | null; conflicts: readonly CatalogConflict[]; onClose: () => void }) {
+export function DetailDrawer({ selected, onClose }: { selected: SelectedReference | null; onClose: () => void }) {
+  // Called before the early return so the hook order stays stable across renders.
+  useScrollLock(selected !== null);
   if (!selected) return null;
   const { entry, reason } = selected;
-  const entryConflicts = conflicts.filter((conflict) => conflict.entryId === entry.id);
   return (
     <div class="drawer-backdrop" role="presentation" onClick={onClose}>
       <aside class="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="detail-title" onClick={(event: TargetedEvent<HTMLElement, MouseEvent>) => event.stopPropagation()}>
@@ -80,12 +82,9 @@ export function DetailDrawer({ selected, conflicts, onClose }: { selected: Selec
           {entry.price && <section><h3>Price</h3><p>{entry.price.amount !== undefined ? `${entry.price.amount}eb` : 'Amount not listed'}{entry.price.category ? ` · ${pretty(entry.price.category)}` : ''}</p></section>}
           {entry.tags.length > 0 && <section><h3>Tags</h3><div class="tags">{entry.tags.map((tag) => <span key={tag}>{tag}</span>)}</div></section>}
           <section><h3>Source</h3>
-            <p>{entry.source?.book ?? 'No official book reference in the synchronized record'}{entry.source?.page ? `, p. ${entry.source.page}` : ''}</p>
-            {entry.foundry && <p class="muted">Foundry: {entry.foundry.pack ?? 'unknown pack'} · {entry.foundry.ref}</p>}
+            <p>{entry.source?.book ?? 'No book reference available'}{entry.source?.page ? `, p. ${entry.source.page}` : ''}</p>
           </section>
-          <section><h3>Data provenance</h3><ul class="provenance-list">{entry.provenance.map((item, index) => <li key={`${item.source}-${item.field}-${index}`}><strong>{pretty(item.source)}</strong> · {item.field}{item.pack ? ` · ${item.pack}` : ''}</li>)}</ul></section>
-          {entryConflicts.length > 0 && <section class="data-conflicts"><h3>Data differences</h3><p>Generator values remain authoritative for generation balance. Foundry values are retained here for review.</p><ul>{entryConflicts.map((conflict) => <li key={conflict.field}><strong>{conflict.field}</strong><span>Generator: {JSON.stringify(conflict.generatorValue)}</span><span>Foundry: {JSON.stringify(conflict.foundryValue)}</span></li>)}</ul></section>}
-          <p class="content-boundary">Descriptions are concise reference summaries. Consult the cited, legally owned rulebook for complete official wording and edge cases.</p>
+          <p class="content-boundary">Check the cited rulebook for the complete rules.</p>
         </div>
       </aside>
     </div>

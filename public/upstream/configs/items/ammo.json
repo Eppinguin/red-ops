@@ -1,0 +1,133 @@
+{
+  "Basic": {
+    "types": [
+      "Arrow",
+      "Heavy Pistol",
+      "Medium Pistol",
+      "Rifle",
+      "Shotgun Shell",
+      "Shotgun Slug",
+      "Very Heavy Pistol"
+    ],
+    "price": 1
+  },
+  "Armor-Piercing": {
+    "types": [
+      "Arrow",
+      "Grenade",
+      "Heavy Pistol",
+      "Medium Pistol",
+      "Rifle",
+      "Rocket",
+      "Shotgun Slug",
+      "Very Heavy Pistol"
+    ],
+    "price": 10
+  },
+  "Biotoxin": {
+    "types": [
+      "Arrow",
+      "Grenade"
+    ],
+    "price": 50
+  },
+  "EMP": {
+    "types": [
+      "Grenade"
+    ],
+    "price": 50
+  },
+  "Expansive": {
+    "types": [
+      "Arrow",
+      "Heavy Pistol",
+      "Medium Pistol",
+      "Rifle",
+      "Shotgun Slug",
+      "Very Heavy Pistol"
+    ],
+    "price": 10
+  },
+  "Flashbang": {
+    "types": [
+      "Grenade"
+    ],
+    "price": 10
+  },
+  "Incendiary": {
+    "types": [
+      "Arrow",
+      "Grenade",
+      "Heavy Pistol",
+      "Medium Pistol",
+      "Rifle",
+      "Shotgun Shell",
+      "Shotgun Slug",
+      "Very Heavy Pistol"
+    ],
+    "price": 10
+  },
+  "Poison": {
+    "types": [
+      "Arrow",
+      "Grenade"
+    ],
+    "price": 10
+  },
+  "Rubber": {
+    "types": [
+      "Arrow",
+      "Heavy Pistol",
+      "Medium Pistol",
+      "Rifle",
+      "Shotgun Slug",
+      "Very Heavy Pistol"
+    ],
+    "price": 1
+  },
+  "Sleep": {
+    "types": [
+      "Arrow",
+      "Grenade"
+    ],
+    "price": 50
+  },
+  "Smart": {
+    "types": [
+      "Arrow",
+      "Heavy Pistol",
+      "Medium Pistol",
+      "Rifle",
+      "Rocket",
+      "Shotgun Slug",
+      "Very Heavy Pistol"
+    ],
+    "price": 50
+  },
+  "Smoke": {
+    "types": [
+      "Grenade"
+    ],
+    "price": 5
+  },
+  "Teargas": {
+    "types": [
+      "Grenade"
+    ],
+    "price": 5
+  },
+  "Net": {
+    "types": [
+      "Net"
+    ],
+    "price": 50,
+    "name": "Net"
+  },
+  "MagnaSlot BatteryBrick": {
+    "types": [
+      "MagnaSlot BatteryBrick"
+    ],
+    "price": 3,
+    "name": "MagnaSlot BatteryBrick"
+  }
+}

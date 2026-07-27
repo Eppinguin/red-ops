@@ -34,6 +34,9 @@ export function createItem(data: ItemData = {}): Item {
     name: data.name ?? 'Empty item',
     type: data.type ?? 'junk',
     price: data.price ?? 0,
+    beautiful_name: data.beautiful_name ?? null,
+    beautiful_names_by_skill: { ...(data.beautiful_names_by_skill ?? {}) },
+    beautiful_names_by_quality: { ...(data.beautiful_names_by_quality ?? {}) },
     default_hidden: data.default_hidden ?? false,
     modifier_applying_priority: data.modifier_applying_priority ?? 0,
     unique_tags: [...(data.unique_tags ?? [])],
@@ -49,6 +52,7 @@ export function createItem(data: ItemData = {}): Item {
     required_containers: [...(data.required_containers ?? [])],
     max_equipped_items: data.max_equipped_items ?? 0,
     armor_class: data.armor_class ?? null,
+    armor_locations: [...(data.armor_locations ?? [])],
     damage: data.damage ?? null,
     rate_of_fire: data.rate_of_fire ?? null,
     magazine: data.magazine ?? null,
@@ -75,7 +79,10 @@ export function cloneItem(item: Item, changes: Partial<Item> = {}): Item {
     tags: [...item.tags],
     modifiers: item.modifiers.map((modifier) => ({ ...modifier, complicated: [...(modifier.complicated ?? [])] })),
     required_containers: [...item.required_containers],
+    armor_locations: [...item.armor_locations],
     ammo_types: [...item.ammo_types],
+    beautiful_names_by_skill: { ...item.beautiful_names_by_skill },
+    beautiful_names_by_quality: { ...item.beautiful_names_by_quality },
     required_cyberware: [...item.required_cyberware],
     required_condition: [...item.required_condition],
     possible_names: [...item.possible_names],
@@ -92,7 +99,10 @@ export function copyItem(item: Item): Item {
     tags: [...item.tags],
     modifiers: item.modifiers.map((modifier) => ({ ...modifier, complicated: [...(modifier.complicated ?? [])] })),
     required_containers: [...item.required_containers],
+    armor_locations: [...item.armor_locations],
     ammo_types: [...item.ammo_types],
+    beautiful_names_by_skill: { ...item.beautiful_names_by_skill },
+    beautiful_names_by_quality: { ...item.beautiful_names_by_quality },
     required_cyberware: [...item.required_cyberware],
     required_condition: [...item.required_condition],
     possible_names: [...item.possible_names],
@@ -150,22 +160,27 @@ export function defaultPriceForCategory(category: number): number {
 }
 
 export function itemToString(item: Item, short = false): string {
+  let value = item.beautiful_name ?? item.name;
+  if (item.quality && item.quality !== 'standard') value += ` (${item.quality})`;
   let info = '';
   const pieces: string[] = [];
   if (item.price > 0) pieces.push(short ? `${item.price}eb` : `${item.price}eb (${priceCategory(item.price)})`);
   if (!short) {
     if (item.armor_class) pieces.push(`SP=${item.armor_class}/${item.armor_class}`);
-    if (item.quality) pieces.push(item.quality);
     if (item.damage) pieces.push(`Damage=${item.damage}`);
     if (item.rate_of_fire) pieces.push(`ROF=${item.rate_of_fire}`);
     if (item.magazine) pieces.push(`Mag=/${item.magazine} ()`);
   }
   if (pieces.length) info = ` [${pieces.join(', ')}]`;
-  return `${item.name}${info}`;
+  return `${value}${info}`;
 }
 
 export function itemToFoundry(item: Item): FoundryItem {
-  return { name: item.name, quality: item.quality };
+  return {
+    name: item.name,
+    ...(item.beautiful_name ? { beautiful_name: item.beautiful_name } : {}),
+    quality: item.quality,
+  };
 }
 
 export function createInventoryNode(item: Item): InventoryNode {
@@ -327,7 +342,9 @@ export function createNpc(meatbody: Item): Npc {
     age: 0,
     name: '',
     surname: '',
+    lifepath: {},
     description: '',
+    role: '',
     stats: new Map(),
     skills: new Map(),
     cyberware: createInventoryNode(meatbody),
@@ -363,7 +380,10 @@ export function hydrateRole(data: RoleData): Role {
     preferred_primary_weapons: [...(data.preferred_primary_weapons ?? [])].sort(),
     preferred_secondary_weapons: [...(data.preferred_secondary_weapons ?? [])].sort(),
     preferred_ammo: [...(data.preferred_ammo ?? [])],
-    preferred_armor_class: data.preferred_armor_class ?? 11,
+    preferred_armor: {
+      head: [...(data.preferred_armor?.head ?? [])],
+      body: [...(data.preferred_armor?.body ?? [])],
+    },
     preferred_drugs: [...(data.preferred_drugs ?? [])],
     preferred_equipment: [...(data.preferred_equipment ?? [])],
     min_empathy: data.min_empathy ?? 0,

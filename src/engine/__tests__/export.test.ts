@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createNativeExport } from '../export';
+import { createNativeExport, parseNativeExport } from '../export';
 import type { GeneratedNpcView } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 
@@ -7,7 +7,7 @@ function minimalView(): GeneratedNpcView {
   return {
     npc: {
       name: 'Test', surname: 'Operative', sex: true, nationality: 'en_US', age: 30,
-      description: '', stats: new Map(), skills: new Map(),
+      role: 'solo', lifepath: {}, description: '', stats: new Map(), skills: new Map(),
       cyberware: { item: {} as never, children: [] }, armor: [], weapons: [], inventory: new Map(), traumaTeamStatus: 'NONE',
     },
     rank: { name: 'private' } as never,
@@ -32,5 +32,22 @@ describe('native export', () => {
     const serialized = JSON.stringify(createNativeExport(minimalView()));
     expect(serialized).not.toContain('secret-key');
     expect(serialized).toContain('"model_api_key":null');
+  });
+
+  it('round-trips a complete native NPC for import', () => {
+    const source = minimalView();
+    source.npc.stats.set('BODY', 4);
+    const serialized = JSON.stringify(createNativeExport(source));
+    const imported = parseNativeExport(serialized);
+
+    expect(imported.npc.name).toBe('Test');
+    expect(imported.npc.stats).toBeInstanceOf(Map);
+    expect(imported.npc.stats.get('BODY')).toBe(4);
+    expect(imported.options.model_api_key).toBeNull();
+  });
+
+  it('rejects JSON that is not a portable native export', () => {
+    expect(() => parseNativeExport('{"schemaVersion":2,"npc":{}}'))
+      .toThrow('The file is not a supported Red Ops native NPC export.');
   });
 });

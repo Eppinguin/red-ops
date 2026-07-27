@@ -1,4 +1,5 @@
-import { createEmptyEncounter, normalizeEncounter } from './model';
+import type { GeneratedNpcView } from '../engine/types';
+import { combatantFromNpc, createEmptyEncounter, encounterReducer, normalizeEncounter } from './model';
 import type { EncounterState, EncounterWorkspace } from './types';
 
 const WORKSPACE_KEY = 'red-ops.encounter-workspace.v2';
@@ -66,6 +67,24 @@ export function persistEncounterWorkspace(workspace: EncounterWorkspace): void {
   } catch {
     // The tracker remains usable in memory when browser storage is unavailable.
   }
+}
+
+export function addNpcToActiveEncounter(workspace: EncounterWorkspace, view: GeneratedNpcView): EncounterWorkspace {
+  const activeEncounter = workspace.encounters.find((encounter) => encounter.id === workspace.activeEncounterId)
+    ?? workspace.encounters[0]
+    ?? createEmptyEncounter();
+  const nextEncounter = encounterReducer(activeEncounter, {
+    type: 'add-combatant',
+    combatant: combatantFromNpc(view),
+  });
+  const encounters = workspace.encounters.some((encounter) => encounter.id === activeEncounter.id)
+    ? workspace.encounters.map((encounter) => encounter.id === activeEncounter.id ? nextEncounter : encounter)
+    : [nextEncounter];
+  return {
+    version: 2,
+    activeEncounterId: activeEncounter.id,
+    encounters,
+  };
 }
 
 export function parseEncounterImport(text: string): EncounterState {

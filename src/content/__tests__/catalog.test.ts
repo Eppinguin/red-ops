@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { findCatalogEntry, mergeReferenceEntries } from '../catalog';
+import { buildGeneratorCatalog, findCatalogEntry, mergeReferenceEntries } from '../catalog';
 import type { CatalogEntry } from '../types';
+import type { Catalog } from '../../engine/types';
 
 function weaponEntry(source: 'generator' | 'foundry', overrides: Partial<CatalogEntry> = {}): CatalogEntry {
   return {
@@ -86,6 +87,30 @@ describe('canonical reference catalog', () => {
     });
     const { entries } = mergeReferenceEntries([generator], [foundry]);
     expect(entries[0]?.summary).toBe('Generator fallback.');
+  });
+
+  it('uses structured armor locations from the current generator schema', () => {
+    const catalog = {
+      armor: [{
+        name: 'Medium Armorjack (Head)',
+        type: 'armor',
+        armor_class: 12,
+        armor_locations: ['Head'],
+      }],
+      weapons: [],
+      cyberware: [],
+      equipment: [],
+      drugs: [],
+      junk: [],
+      skills: {},
+      ammo: {},
+    } as unknown as Catalog;
+
+    expect(buildGeneratorCatalog(catalog)[0]?.mechanics).toMatchObject({
+      kind: 'armor',
+      stoppingPower: 12,
+      locations: ['head'],
+    });
   });
 
 });

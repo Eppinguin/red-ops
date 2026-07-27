@@ -1,0 +1,105 @@
+[
+  {
+    "name": "Cyberleg",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Hips"
+    ],
+    "container_capacity": 3,
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Grip Foot",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Jump Booster",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 2,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Skate Foot",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Talon Foot",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "LightMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "1d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberleg",
+      "Hips"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Web Foot",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberleg"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "PerfectFit Cyberfoot",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Cyberleg",
+      "Hips"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  }
+]

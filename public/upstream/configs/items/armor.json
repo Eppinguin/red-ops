@@ -1,0 +1,295 @@
+[
+  {
+    "name": "Leathers (Head)",
+    "type": "armor",
+    "price": 20,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 4,
+    "armor_locations": [
+      "Head"
+    ]
+  },
+  {
+    "name": "Leathers (Body)",
+    "type": "armor",
+    "price": 20,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 4,
+    "armor_locations": [
+      "Body"
+    ]
+  },
+  {
+    "name": "Kevlar\u00ae (Head)",
+    "type": "armor",
+    "price": 50,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 7,
+    "armor_locations": [
+      "Head"
+    ]
+  },
+  {
+    "name": "Kevlar\u00ae (Body)",
+    "type": "armor",
+    "price": 50,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 7,
+    "armor_locations": [
+      "Body"
+    ]
+  },
+  {
+    "name": "Light Armorjack (Head)",
+    "type": "armor",
+    "price": 100,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 11,
+    "armor_locations": [
+      "Head"
+    ]
+  },
+  {
+    "name": "Light Armorjack (Body)",
+    "type": "armor",
+    "price": 100,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 11,
+    "armor_locations": [
+      "Body"
+    ]
+  },
+  {
+    "name": "Bodyweight Suit",
+    "type": "armor",
+    "price": 1000,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 11,
+    "armor_locations": [
+      "Head",
+      "Body"
+    ]
+  },
+  {
+    "name": "Medium Armorjack (Head)",
+    "type": "armor",
+    "price": 100,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 12,
+    "armor_locations": [
+      "Head"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -2
+      },
+      {
+        "name": "DEX",
+        "simple": -2
+      },
+      {
+        "name": "MOVE",
+        "simple": -2
+      }
+    ]
+  },
+  {
+    "name": "Medium Armorjack (Body)",
+    "type": "armor",
+    "price": 100,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 12,
+    "armor_locations": [
+      "Body"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -2
+      },
+      {
+        "name": "DEX",
+        "simple": -2
+      },
+      {
+        "name": "MOVE",
+        "simple": -2
+      }
+    ]
+  },
+  {
+    "name": "Heavy Armorjack (Head)",
+    "type": "armor",
+    "price": 500,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 13,
+    "armor_locations": [
+      "Head"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -2
+      },
+      {
+        "name": "DEX",
+        "simple": -2
+      },
+      {
+        "name": "MOVE",
+        "simple": -2
+      }
+    ]
+  },
+  {
+    "name": "Heavy Armorjack (Body)",
+    "type": "armor",
+    "price": 500,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 13,
+    "armor_locations": [
+      "Body"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -2
+      },
+      {
+        "name": "DEX",
+        "simple": -2
+      },
+      {
+        "name": "MOVE",
+        "simple": -2
+      }
+    ]
+  },
+  {
+    "name": "Flak (Head)",
+    "type": "armor",
+    "price": 500,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 15,
+    "armor_locations": [
+      "Head"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -4
+      },
+      {
+        "name": "DEX",
+        "simple": -4
+      },
+      {
+        "name": "MOVE",
+        "simple": -4
+      }
+    ]
+  },
+  {
+    "name": "Flak (Body)",
+    "type": "armor",
+    "price": 500,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 15,
+    "armor_locations": [
+      "Body"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -4
+      },
+      {
+        "name": "DEX",
+        "simple": -4
+      },
+      {
+        "name": "MOVE",
+        "simple": -4
+      }
+    ]
+  },
+  {
+    "name": "Metalgear\u00ae (Head)",
+    "type": "armor",
+    "price": 5000,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 18,
+    "armor_locations": [
+      "Head"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -4
+      },
+      {
+        "name": "DEX",
+        "simple": -4
+      },
+      {
+        "name": "MOVE",
+        "simple": -4
+      }
+    ]
+  },
+  {
+    "name": "Metalgear\u00ae (Body)",
+    "type": "armor",
+    "price": 5000,
+    "tags": [
+      "Armor"
+    ],
+    "armor_class": 18,
+    "armor_locations": [
+      "Body"
+    ],
+    "modifiers": [
+      {
+        "name": "REF",
+        "simple": -4
+      },
+      {
+        "name": "DEX",
+        "simple": -4
+      },
+      {
+        "name": "MOVE",
+        "simple": -4
+      }
+    ]
+  }
+]

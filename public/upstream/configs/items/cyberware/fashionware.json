@@ -1,0 +1,120 @@
+[
+  {
+    "name": "Biomonitor",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Chemskin",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "EMP Threading",
+    "type": "cyberware",
+    "price": 10,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Light Tattoo",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1
+  },
+  {
+    "name": "Shift Tacts",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Skinwatch",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Techhair",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Heuristic Health Monitor",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "required_cyberware": [
+      "Biomonitor"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Kill Display",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Lead's Turn-On-Show-Off Nails",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Fashionware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 2
+  },
+  {
+    "name": "Mood Eye",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Fashionware"
+    ],
+    "required_cyberware": [
+      "Neural Link"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  }
+]

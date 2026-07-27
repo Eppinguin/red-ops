@@ -78,22 +78,20 @@ export function ReferenceBrowser({
     <section class="reference panel">
       <header class="reference-hero">
         <div>
-          <span class="kicker">Canonical content catalog</span>
-          <h2>Rules-ready reference</h2>
-          <p>Search generated and synchronized content without leaving the NPC workspace. Mechanical data remains distinct from concise descriptions and source attribution.</p>
+          <span class="kicker">Game reference</span>
+          <h2>Find rules and equipment</h2>
+          <p>Search skills, weapons, armor, cyberware, and gear.</p>
         </div>
         <div class="reference-stats">
           <strong>{entries.length}</strong><span>entries</span>
-          <strong>{manifest?.foundry?.itemCount ?? 0}</strong><span>Foundry records</span>
-          <strong>{manifest?.foundry?.ref ?? 'not synced'}</strong><span>content ref</span>
-          <strong>{manifest?.conflictCount ?? 0}</strong><span>data differences</span>
+          <strong>{manifest?.foundry?.itemCount ?? 0}</strong><span>extra references</span>
         </div>
       </header>
 
       {manifest?.foundry && manifest.foundry.itemCount === 0 && (
         <div class="content-notice" role="status">
-          <strong>Foundry enrichment is not bundled in this checkout.</strong>
-          <span>Run <code>npm run content:sync-foundry</code> during development to populate concise descriptions, source references, and compatible mechanical metadata from the pinned Foundry release.</span>
+          <strong>Some reference details are unavailable.</strong>
+          <span>You can still search and use the built-in rules and equipment.</span>
         </div>
       )}
 
@@ -110,8 +108,8 @@ export function ReferenceBrowser({
         </select>
         <select value={source} onChange={(event: SelectEvent) => setSource(event.currentTarget.value as SourceFilter)}>
           <option value="all">All sources</option>
-          <option value="generator">Generator data</option>
-          <option value="foundry">Foundry enriched</option>
+          <option value="generator">Built-in</option>
+          <option value="foundry">Extra references</option>
         </select>
       </div>
 

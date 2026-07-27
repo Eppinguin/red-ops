@@ -1,0 +1,465 @@
+[
+  {
+    "name": "private",
+    "min_items_quality": "poor",
+    "items_budget": {
+      "armor": {
+        "mean": 40,
+        "standard_deviation": 5
+      },
+      "weapon": {
+        "mean": 120,
+        "standard_deviation": 10
+      },
+      "cyberware": {
+        "mean": 100,
+        "standard_deviation": 10
+      },
+      "ammo": {
+        "mean": 40,
+        "standard_deviation": 5
+      },
+      "equipment": {
+        "mean": 30,
+        "standard_deviation": 4
+      },
+      "drug": {
+        "mean": 20,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 20,
+        "standard_deviation": 5
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 2,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 2,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 6,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 40,
+      "standard_deviation": 3
+    },
+    "skills_budget": {
+      "mean": 50,
+      "standard_deviation": 3
+    },
+    "pocket_money": {
+      "mean": 50,
+      "standard_deviation": 5
+    },
+    "container_selection": {
+      "mean": 0.9,
+      "standard_deviation": 0.1
+    }
+  },
+  {
+    "name": "corporal",
+    "min_items_quality": "poor",
+    "items_budget": {
+      "armor": {
+        "mean": 100,
+        "standard_deviation": 7
+      },
+      "weapon": {
+        "mean": 200,
+        "standard_deviation": 15
+      },
+      "cyberware": {
+        "mean": 200,
+        "standard_deviation": 20
+      },
+      "ammo": {
+        "mean": 80,
+        "standard_deviation": 10
+      },
+      "equipment": {
+        "mean": 50,
+        "standard_deviation": 5
+      },
+      "drug": {
+        "mean": 30,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 50,
+        "standard_deviation": 7
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 2,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 3,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 6,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 47,
+      "standard_deviation": 2.7
+    },
+    "skills_budget": {
+      "mean": 60,
+      "standard_deviation": 2.7
+    },
+    "pocket_money": {
+      "mean": 100,
+      "standard_deviation": 10
+    },
+    "container_selection": {
+      "mean": 0.8,
+      "standard_deviation": 0.1
+    }
+  },
+  {
+    "name": "lieutenant",
+    "min_items_quality": "poor",
+    "items_budget": {
+      "armor": {
+        "mean": 150,
+        "standard_deviation": 10
+      },
+      "weapon": {
+        "mean": 250,
+        "standard_deviation": 30
+      },
+      "cyberware": {
+        "mean": 500,
+        "standard_deviation": 50
+      },
+      "ammo": {
+        "mean": 120,
+        "standard_deviation": 10
+      },
+      "equipment": {
+        "mean": 100,
+        "standard_deviation": 10
+      },
+      "drug": {
+        "mean": 40,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 100,
+        "standard_deviation": 10
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 4,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 4,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 4,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 54,
+      "standard_deviation": 2.5
+    },
+    "skills_budget": {
+      "mean": 73,
+      "standard_deviation": 2.5
+    },
+    "pocket_money": {
+      "mean": 250,
+      "standard_deviation": 25
+    },
+    "container_selection": {
+      "mean": 0.7,
+      "standard_deviation": 0.1
+    }
+  },
+  {
+    "name": "captain",
+    "min_items_quality": "standard",
+    "items_budget": {
+      "armor": {
+        "mean": 250,
+        "standard_deviation": 10
+      },
+      "weapon": {
+        "mean": 650,
+        "standard_deviation": 50
+      },
+      "cyberware": {
+        "mean": 1000,
+        "standard_deviation": 100
+      },
+      "ammo": {
+        "mean": 160,
+        "standard_deviation": 15
+      },
+      "equipment": {
+        "mean": 200,
+        "standard_deviation": 20
+      },
+      "drug": {
+        "mean": 100,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 200,
+        "standard_deviation": 20
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 4,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 5,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 4,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 60,
+      "standard_deviation": 2.3
+    },
+    "skills_budget": {
+      "mean": 86,
+      "standard_deviation": 2.3
+    },
+    "pocket_money": {
+      "mean": 500,
+      "standard_deviation": 50
+    },
+    "container_selection": {
+      "mean": 0.6,
+      "standard_deviation": 0.1
+    }
+  },
+  {
+    "name": "lieutenant_colonel",
+    "min_items_quality": "standard",
+    "items_budget": {
+      "armor": {
+        "mean": 500,
+        "standard_deviation": 20
+      },
+      "weapon": {
+        "mean": 1500,
+        "standard_deviation": 150
+      },
+      "cyberware": {
+        "mean": 2000,
+        "standard_deviation": 200
+      },
+      "ammo": {
+        "mean": 200,
+        "standard_deviation": 15
+      },
+      "equipment": {
+        "mean": 500,
+        "standard_deviation": 50
+      },
+      "drug": {
+        "mean": 200,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 500,
+        "standard_deviation": 50
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 4,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 6,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 3,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 67,
+      "standard_deviation": 2
+    },
+    "skills_budget": {
+      "mean": 100,
+      "standard_deviation": 2
+    },
+    "pocket_money": {
+      "mean": 700,
+      "standard_deviation": 70
+    },
+    "trauma_team_status_weights": [
+      0.8,
+      0.2,
+      0.0
+    ],
+    "container_selection": {
+      "mean": 0.3,
+      "standard_deviation": 0.1
+    }
+  },
+  {
+    "name": "lieutenant_general",
+    "min_items_quality": "excellent",
+    "items_budget": {
+      "armor": {
+        "mean": 5100,
+        "standard_deviation": 1
+      },
+      "weapon": {
+        "mean": 5000,
+        "standard_deviation": 400
+      },
+      "cyberware": {
+        "mean": 5000,
+        "standard_deviation": 1000
+      },
+      "ammo": {
+        "mean": 300,
+        "standard_deviation": 20
+      },
+      "equipment": {
+        "mean": 800,
+        "standard_deviation": 80
+      },
+      "drug": {
+        "mean": 500,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 800,
+        "standard_deviation": 80
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 4,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 7,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 3,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 74,
+      "standard_deviation": 1.5
+    },
+    "skills_budget": {
+      "mean": 115,
+      "standard_deviation": 1.5
+    },
+    "pocket_money": {
+      "mean": 1200,
+      "standard_deviation": 120
+    },
+    "trauma_team_status_weights": [
+      0.0,
+      0.7,
+      0.3
+    ],
+    "container_selection": {
+      "mean": 0.2,
+      "standard_deviation": 0.1
+    }
+  },
+  {
+    "name": "general",
+    "min_items_quality": "excellent",
+    "items_budget": {
+      "armor": {
+        "mean": 10100,
+        "standard_deviation": 1
+      },
+      "weapon": {
+        "mean": 10000,
+        "standard_deviation": 700
+      },
+      "cyberware": {
+        "mean": 30000,
+        "standard_deviation": 3000
+      },
+      "ammo": {
+        "mean": 500,
+        "standard_deviation": 30
+      },
+      "equipment": {
+        "mean": 1500,
+        "standard_deviation": 150
+      },
+      "drug": {
+        "mean": 1000,
+        "standard_deviation": 7
+      },
+      "junk": {
+        "mean": 1500,
+        "standard_deviation": 150
+      }
+    },
+    "items_num_budget": {
+      "equipment": {
+        "mean": 4,
+        "standard_deviation": 1
+      },
+      "drug": {
+        "mean": 8,
+        "standard_deviation": 1
+      },
+      "junk": {
+        "mean": 3,
+        "standard_deviation": 1
+      }
+    },
+    "stats_budget": {
+      "mean": 80,
+      "standard_deviation": 1
+    },
+    "skills_budget": {
+      "mean": 130,
+      "standard_deviation": 1
+    },
+    "pocket_money": {
+      "mean": 2500,
+      "standard_deviation": 250
+    },
+    "trauma_team_status_weights": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "container_selection": {
+      "mean": 0.1,
+      "standard_deviation": 0.1
+    }
+  }
+]

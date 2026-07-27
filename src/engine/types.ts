@@ -25,6 +25,9 @@ export interface ItemData {
   name?: string;
   type?: ItemType;
   price?: number;
+  beautiful_name?: string | null;
+  beautiful_names_by_skill?: Record<string, string>;
+  beautiful_names_by_quality?: Partial<Record<ItemQuality, string>>;
   default_hidden?: boolean;
   modifier_applying_priority?: number;
   unique_tags?: string[];
@@ -36,6 +39,7 @@ export interface ItemData {
   required_containers?: string[];
   max_equipped_items?: number;
   armor_class?: number | null;
+  armor_locations?: string[];
   damage?: string | null;
   rate_of_fire?: number | null;
   magazine?: number | null;
@@ -50,9 +54,10 @@ export interface ItemData {
 }
 
 export interface Item extends Required<Omit<ItemData,
-  'quality' | 'armor_class' | 'damage' | 'rate_of_fire' | 'magazine' | 'skill' | 'possible_names'>> {
+  'beautiful_name' | 'quality' | 'armor_class' | 'damage' | 'rate_of_fire' | 'magazine' | 'skill' | 'possible_names'>> {
   id: string;
   creationTime: number;
+  beautiful_name: string | null;
   quality: ItemQuality | null;
   armor_class: number | null;
   damage: string | null;
@@ -65,6 +70,7 @@ export interface Item extends Required<Omit<ItemData,
 export interface SkillData {
   link: StatName;
   type: SkillType;
+  preferred_equipment_tags?: string[];
 }
 
 export interface Skill extends SkillData {
@@ -78,14 +84,22 @@ export interface RoleData {
   preferred_primary_weapons?: string[];
   preferred_secondary_weapons?: string[];
   preferred_ammo?: string[];
-  preferred_armor_class?: number;
+  preferred_armor?: {
+    head?: string[];
+    body?: string[];
+  };
   preferred_drugs?: string[];
   preferred_equipment?: string[];
   min_empathy?: number;
   martial_arts_probability?: number;
 }
 
-export interface Role extends Required<RoleData> {}
+export interface Role extends Omit<Required<RoleData>, 'preferred_armor'> {
+  preferred_armor: {
+    head: string[];
+    body: string[];
+  };
+}
 
 export interface RankData {
   name: string;
@@ -116,6 +130,9 @@ export interface GenerationRules {
   allow_melee_weapon: boolean;
   allow_ranged_weapon: boolean;
   allow_martial_arts: boolean;
+  allow_description: boolean;
+  allow_lifepath: boolean;
+  forbidden_skills: string[];
 }
 
 export interface GenerateOptions extends GenerationRules {
@@ -151,13 +168,65 @@ export interface StatSkillValue {
   modifiers: ModifierSource[];
 }
 
+export interface LifepathEnemy {
+  enemy: string;
+  cause: string;
+  wronged_party: string;
+  resources: string;
+  reaction: string;
+}
+
+export interface Lifepath {
+  cultural_origin?: string;
+  language?: string;
+  personality?: string;
+  clothing_style?: string;
+  hairstyle?: string;
+  affectation?: string;
+  value_most?: string;
+  feel_about_people?: string;
+  valued_person?: string;
+  valued_possession?: string;
+  family_background?: { name: string; description: string };
+  childhood_environment?: string;
+  family_crisis?: string;
+  friends?: string[];
+  enemies?: LifepathEnemy[];
+  tragic_love_affairs?: string[];
+  life_goal?: string;
+}
+
+export interface LifepathCatalog {
+  cultural_origins: Array<{ region: string; languages: string[] }>;
+  friend_relationship: string[];
+  enemy: string[];
+  enemy_cause: string[];
+  enemy_resources: string[];
+  sweet_revenge: string[];
+  tragic_love_affair: string[];
+  personality: string[];
+  clothing_style: string[];
+  hairstyle: string[];
+  affectation: string[];
+  value_most: string[];
+  feel_about_people: string[];
+  valued_person: string[];
+  valued_possession: string[];
+  family_background: Array<{ name: string; description: string }>;
+  childhood_environment: string[];
+  family_crisis: string[];
+  life_goal: string[];
+}
+
 export interface Npc {
   sex: boolean;
   nationality: string | null;
   age: number;
   name: string;
   surname: string;
+  lifepath: Lifepath;
   description: string;
+  role: string;
   stats: Map<StatName, number>;
   skills: Map<string, { skill: Skill; level: number }>;
   cyberware: InventoryNode;
@@ -170,6 +239,7 @@ export interface Npc {
 export interface AmmoModificationData {
   price: number;
   types: string[];
+  name?: string;
 }
 
 export interface StatsCatalog {
@@ -185,9 +255,11 @@ export interface Catalog {
   roles: RoleData[];
   stats: StatsCatalog;
   skills: Record<string, SkillData>;
+  skillSpecializations: Record<string, string[]>;
   weaponSkills: Record<string, string>;
   nationalityWeights: NationalityWeights;
   descriptionPrompt: string;
+  lifepath: LifepathCatalog;
   ammo: Record<string, AmmoModificationData>;
   armor: ItemData[];
   drugs: ItemData[];
@@ -199,6 +271,7 @@ export interface Catalog {
 
 export interface FoundryItem {
   name: string;
+  beautiful_name?: string;
   quality: ItemQuality | null;
 }
 
@@ -208,11 +281,13 @@ export interface FoundryInventoryNode {
 }
 
 export interface FoundryNpc {
+  role: string;
   sex: boolean;
   nationality: string | null;
   age: number;
   name: string;
   surname: string;
+  lifepath: Lifepath;
   description: string;
   stats: Record<StatName, number>;
   skills: Record<string, number>;
@@ -332,6 +407,9 @@ export const DEFAULT_RULES: GenerationRules = {
   allow_melee_weapon: true,
   allow_ranged_weapon: true,
   allow_martial_arts: true,
+  allow_description: false,
+  allow_lifepath: true,
+  forbidden_skills: [],
 };
 
 export const DEFAULT_OPTIONS: GenerateOptions = {

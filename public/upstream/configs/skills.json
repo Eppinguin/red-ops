@@ -1,0 +1,402 @@
+{
+  "Concentration": {
+    "link": "WILL",
+    "type": "awareness"
+  },
+  "ConcealRevealObject": {
+    "link": "INT",
+    "type": "awareness"
+  },
+  "LipReading": {
+    "link": "INT",
+    "type": "awareness"
+  },
+  "Perception": {
+    "link": "INT",
+    "type": "awareness"
+  },
+  "Tracking": {
+    "link": "INT",
+    "type": "awareness"
+  },
+  "Athletics": {
+    "link": "DEX",
+    "type": "body"
+  },
+  "Contortionist": {
+    "link": "DEX",
+    "type": "body"
+  },
+  "Dance": {
+    "link": "DEX",
+    "type": "body"
+  },
+  "Endurance": {
+    "link": "WILL",
+    "type": "body"
+  },
+  "ResistTortureDrugs": {
+    "link": "WILL",
+    "type": "body"
+  },
+  "Stealth": {
+    "link": "DEX",
+    "type": "body"
+  },
+  "DriveLandVehicle": {
+    "link": "REF",
+    "type": "control"
+  },
+  "PilotAirVehicle": {
+    "link": "REF",
+    "type": "control"
+  },
+  "PilotSeaVehicle": {
+    "link": "REF",
+    "type": "control"
+  },
+  "Riding": {
+    "link": "REF",
+    "type": "control"
+  },
+  "Accounting": {
+    "link": "INT",
+    "type": "education"
+  },
+  "AnimalHandling": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Bureaucracy": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Business": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Composition": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Criminology": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Cryptography": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Deduction": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Education": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Gamble": {
+    "link": "INT",
+    "type": "education"
+  },
+  "LibrarySearch": {
+    "link": "INT",
+    "type": "education"
+  },
+  "LocalExpertYourHome": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Tactics": {
+    "link": "INT",
+    "type": "education"
+  },
+  "WildernessSurvival": {
+    "link": "INT",
+    "type": "education"
+  },
+  "LanguageStreetslang": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Science (Chemistry)": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Science (Biology)": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Science (Mathematics)": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Science (Physics)": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Science (History)": {
+    "link": "INT",
+    "type": "education"
+  },
+  "Brawling": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "Evasion": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Aikido)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Karate)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Judo)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Taekwondo)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Arasaka-te)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Arnis)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Boxing)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Capoeira)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Choy Li Fut)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Drunken Fist)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Gun Fu)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Jujutsu)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Kendo)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Krav Maga)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Kung Fu)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Kyudo)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Militech Commando Training)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Muay Thai)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Multiarm Melee)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (PanzerFaust)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Silat)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Sov-System)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Sumo)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Tai Chi)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Thamoc)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Thrash Sambo)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MartialArts (Wrestling)": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "MeleeWeapon": {
+    "link": "DEX",
+    "type": "fighting"
+  },
+  "Initiative": {
+    "link": "REF",
+    "type": "fighting"
+  },
+  "Acting": {
+    "link": "COOL",
+    "type": "performance"
+  },
+  "PlayInstrument (Guitar)": {
+    "link": "TECH",
+    "type": "performance"
+  },
+  "PlayInstrument (Drums)": {
+    "link": "TECH",
+    "type": "performance"
+  },
+  "PlayInstrument (Singing)": {
+    "link": "TECH",
+    "type": "performance"
+  },
+  "PlayInstrument (Piano)": {
+    "link": "TECH",
+    "type": "performance"
+  },
+  "Archery": {
+    "link": "REF",
+    "type": "ranged_weapon"
+  },
+  "Autofire": {
+    "link": "REF",
+    "type": "ranged_weapon"
+  },
+  "Handgun": {
+    "link": "REF",
+    "type": "ranged_weapon"
+  },
+  "HeavyWeapons": {
+    "link": "REF",
+    "type": "ranged_weapon"
+  },
+  "ShoulderArms": {
+    "link": "REF",
+    "type": "ranged_weapon"
+  },
+  "Bribery": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "Conversation": {
+    "link": "EMP",
+    "type": "social"
+  },
+  "HumanPerception": {
+    "link": "EMP",
+    "type": "social"
+  },
+  "Interrogation": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "Persuasion": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "PersonalGrooming": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "Streetwise": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "Trading": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "WardrobeStyle": {
+    "link": "COOL",
+    "type": "social"
+  },
+  "AirVehicleTech": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "BasicTech": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "Cybertech": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "Demolitions": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "ElectronicsSecurityTech": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "FirstAid": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "Forgery": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "LandVehicleTech": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "PaintDrawSculpt": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "Paramedic": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "PhotographyFilm": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "PickLock": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "PickPocket": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "SeaVehicleTech": {
+    "link": "TECH",
+    "type": "technique"
+  },
+  "Weaponstech": {
+    "link": "TECH",
+    "type": "technique"
+  }
+}

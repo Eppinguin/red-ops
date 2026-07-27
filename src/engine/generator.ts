@@ -43,7 +43,6 @@ import type {
 import { STAT_NAMES } from './types';
 
 const RANDOM_GENERATING_NUM_ATTEMPTS = 200;
-const MAX_AMMO_PER_MODIFICATION = 80;
 const MAX_UNIQUE_DRUG_ITEMS = 1;
 
 interface Template {
@@ -85,11 +84,18 @@ function chooseNationality(random: NumpyRandom, catalog: Catalog): string {
     const country = locale.slice(locale.lastIndexOf('_') + 1);
     counts.set(country, (counts.get(country) ?? 0) + 1);
   }
-  const weights = locales.map((locale) => {
+  const weighted = locales.map((locale) => {
     const country = locale.slice(locale.lastIndexOf('_') + 1);
-    return (catalog.nationalityWeights.populations[country] ?? 0) / (counts.get(country) ?? 1);
-  });
-  return random.choice(locales, weights);
+    return {
+      locale,
+      weight: (catalog.nationalityWeights.populations[country] ?? 0) / (counts.get(country) ?? 1),
+    };
+  }).filter(({ weight }) => weight > 0)
+    .sort((left, right) => right.weight - left.weight);
+  return random.choice(
+    weighted.map(({ locale }) => locale),
+    weighted.map(({ weight }) => weight),
+  );
 }
 
 function distributePoints(
@@ -109,21 +115,21 @@ function distributePoints(
 
   const indexed = clamped.map((value, index) => ({ index, value }));
   indexed.sort((a, b) => b.value - a.value);
-  let changed = true;
-  while (changed) {
-    changed = false;
+  while (clampError !== 0) {
+    let changed = false;
     for (const entry of indexed) {
-      if (clampError !== 0 && !(entry.value >= minimum && entry.value <= maximum)) {
-        if (clampError > 0) {
-          clampError -= 1;
-          entry.value += 1;
-        } else {
-          clampError += 1;
-          entry.value -= 1;
-        }
+      if (clampError > 0 && entry.value < maximum) {
+        clampError -= 1;
+        entry.value += 1;
+        changed = true;
+      } else if (clampError < 0 && entry.value > minimum) {
+        clampError += 1;
+        entry.value -= 1;
         changed = true;
       }
+      if (clampError === 0) break;
     }
+    if (!changed) break;
   }
 
   const result = Array<number>(weights.length).fill(0);
@@ -143,30 +149,48 @@ function generateStatsAndSkills(npc: Npc, template: Template, catalog: Catalog, 
   );
   for (let index = 0; index < stats.length; index += 1) npc.stats.set(STAT_NAMES[index]!, stats[index]!);
 
+  const forbidden = new Set(template.rules.forbidden_skills);
+  const placeholderNames = new Set(Object.keys(catalog.skillSpecializations));
+  const specializationNames = new Set(Object.values(catalog.skillSpecializations).flat());
   for (const [name, data] of Object.entries(catalog.skills)) {
+    if (forbidden.has(name) || placeholderNames.has(name) || specializationNames.has(name)) continue;
     npc.skills.set(name, { skill: { name, link: data.link, type: data.type }, level: 0 });
   }
-  const roleSkillEntries = Object.entries(template.role.skills);
+  const roleSkillEntries = Object.entries(template.role.skills)
+    .filter(([name]) => !forbidden.has(name))
+    .filter(([name]) => catalog.skills[name] || catalog.skillSpecializations[name]);
   const distributed = distributePoints(
     roleSkillEntries.map(([, value]) => value),
     distributionValue(random, template.rank.skills_budget),
     2,
     10,
   );
-  roleSkillEntries.forEach(([name], index) => {
-    const entry = npc.skills.get(name);
-    if (!entry) throw new Error(`Unknown role skill: ${name}`);
+  roleSkillEntries.forEach(([configuredName], index) => {
+    const specializations = catalog.skillSpecializations[configuredName]
+      ?.filter((name) => !forbidden.has(name)) ?? [];
+    const name = specializations.length ? random.choice(specializations) : configuredName;
+    const skillData = catalog.skills[name];
+    if (!skillData) return;
+    const entry = npc.skills.get(name) ?? {
+      skill: { name, link: skillData.link, type: skillData.type },
+      level: 0,
+    };
     entry.level += distributed[index]!;
+    npc.skills.set(name, entry);
   });
 
   if (template.rules.allow_martial_arts && random.uniform(0, 1) < template.role.martial_arts_probability) {
     const brawling = npc.skills.get('Brawling');
-    const martialArts = npc.skills.get('MartialArts');
-    if (brawling && martialArts) {
-      const newMartialArts = Math.ceil((brawling.level - 2) / 2);
-      if (newMartialArts > 0) {
-        brawling.level = 2;
-        martialArts.level = newMartialArts;
+    const forms = forbidden.has('MartialArts')
+      ? []
+      : (catalog.skillSpecializations.MartialArts ?? []).filter((name) => !forbidden.has(name));
+    if (brawling && forms.length) {
+      const name = random.choice(forms);
+      const data = catalog.skills[name];
+      const level = Math.ceil(brawling.level / 2);
+      if (data && level > 0) {
+        brawling.level = 0;
+        npc.skills.set(name, { skill: { name, link: data.link, type: data.type }, level });
       }
     }
   }
@@ -335,7 +359,13 @@ function weaponSort(a: Item, b: Item): number {
 }
 
 function armorSort(a: Item, b: Item): number {
-  const category = (item: Item) => item.name.startsWith('Head') ? 1 : item.name.startsWith('Body') ? 2 : item.name.includes('Shield') ? 3 : 4;
+  const category = (item: Item) => {
+    const locations = new Set(item.armor_locations);
+    if (locations.has('Head') && locations.has('Body')) return 0;
+    if (locations.has('Head') || item.name.endsWith('(Head)')) return 1;
+    if (locations.has('Body') || item.name.endsWith('(Body)')) return 2;
+    return item.name.includes('Shield') ? 3 : 4;
+  };
   return category(a) - category(b) || pythonStringCompare(a.name, b.name);
 }
 
@@ -369,22 +399,31 @@ function pickWeapon(
     const weapon = copyItem(weaponTemplate);
     weapon.price = price;
     weapon.quality = quality;
-    weapon.name = `${random.choice(weapon.possible_names)} (${weapon.name})`;
+    weapon.name = weapon.possible_names.length ? random.choice(weapon.possible_names) : weapon.name;
+    weapon.beautiful_name = weapon.beautiful_names_by_quality[quality] ?? null;
     return [weapon, price];
   }
   return [null, 0];
 }
 
-function brawlingWeapon(npc: Npc, allWeapons: readonly Item[], random: NumpyRandom): Item {
+function brawlingWeapon(
+  npc: Npc,
+  allWeapons: readonly Item[],
+  martialArtsForms: readonly string[],
+): Item {
   const body = getStatOrSkillValue(npc, 'BODY');
   const totalBody = body.value + body.totalModifier;
   const damage = totalBody <= 4 ? '1d6' : totalBody <= 6 ? '2d6' : totalBody <= 10 ? '3d6' : '4d6';
-  const martialArts = npc.skills.get('MartialArts');
-  if (martialArts && martialArts.level > 0) {
+  const martialArtsNames = new Set(martialArtsForms);
+  const martialArts = [...npc.skills.values()].find((entry) =>
+    martialArtsNames.has(entry.skill.name) && entry.level > 0,
+  );
+  if (martialArts) {
     const template = allWeapons.find((item) => item.name === 'Martial Arts');
     if (!template) throw new Error('Martial Arts weapon is missing');
     const item = copyItem(template);
-    item.name = random.choice(item.possible_names);
+    item.name = martialArts.skill.name;
+    item.skill = martialArts.skill.name;
     item.damage = damage;
     return item;
   }
@@ -393,7 +432,7 @@ function brawlingWeapon(npc: Npc, allWeapons: readonly Item[], random: NumpyRand
     unique_tags: ['Brawling', 'MeleeWeapon'],
     damage,
     rate_of_fire: 2,
-    name: 'Brawling',
+    name: 'Unarmed',
   });
 }
 
@@ -416,82 +455,141 @@ function generateWeapons(npc: Npc, template: Template, catalog: Catalog, random:
   if (primary) addUniqueItem(npc.weapons, primary, weaponSort);
   const [secondary] = pickWeapon(totalBudget - spent, template.role.preferred_secondary_weapons, template, allWeapons, npc, random);
   if (secondary) addUniqueItem(npc.weapons, secondary, weaponSort);
-  addUniqueItem(npc.weapons, brawlingWeapon(npc, allWeapons, random), weaponSort);
+  addUniqueItem(
+    npc.weapons,
+    brawlingWeapon(npc, allWeapons, catalog.skillSpecializations.MartialArts ?? []),
+    weaponSort,
+  );
 }
 
 function generateAmmo(npc: Npc, template: Template, catalog: Catalog, random: NumpyRandom): void {
-  const required = new Map<string, { magazineSize: number; ammoAdded: number }>();
-  const addType = (type: string, magazine: number) => {
-    const current = required.get(type);
-    if (!current || magazine > current.magazineSize) required.set(type, { magazineSize: magazine, ammoAdded: 0 });
-  };
-  addType('Grenades', 1);
-  for (const weapon of npc.weapons) for (const type of weapon.ammo_types) addType(type, weapon.magazine ?? 0);
+  type Requirement = { magazineSize: number; total: number };
+  const roundToMagazine = (amount: number, magazine: number) => Math.ceil(amount / magazine) * magazine;
+  const requirements = new Map<string, Requirement>();
+  if (template.rules.allow_grenades) requirements.set('Grenade', { magazineSize: 1, total: 1 });
+  const canAutofire = (npc.skills.get('Autofire')?.level ?? 0) > 0;
 
-  let budget = pythonRound(distributionValue(random, template.rank.items_budget.ammo));
-  const tryAdd = (ammoType: string, modification: string, amount: number, available: number): number => {
-    if (!template.rules.allow_grenades && ammoType === 'Grenades') return 0;
-    const data = catalog.ammo[modification];
-    if (!data || !data.types.includes(ammoType)) return 0;
-    const pricePerOne = (ammoType === 'Grenades' || ammoType === 'Rockets') ? data.price * 10 : data.price;
-    const total = pricePerOne * amount;
-    if (total > available) return 0;
-    const item = createItem({ name: `${ammoType} (${modification})`, type: 'ammo', price: pricePerOne });
-    const existing = findInventoryEntry(npc, item)?.amount ?? 0;
-    if (existing + amount > MAX_AMMO_PER_MODIFICATION) return 0;
-    addInventoryItem(npc, item, amount);
-    return total;
-  };
-
-  if (template.rules.allow_non_basic_ammo) {
-    for (let attempt = 0; attempt < RANDOM_GENERATING_NUM_ATTEMPTS; attempt += 1) {
-      const ammoType = random.choice([...required.keys()]);
-      const data = required.get(ammoType)!;
-      const spent = tryAdd(
-        ammoType,
-        chooseExponentialRandomElement(random, template.role.preferred_ammo),
-        data.magazineSize,
-        budget,
-      );
-      if (spent !== 0) {
-        budget -= spent;
-        data.ammoAdded += data.magazineSize;
+  for (const weapon of npc.weapons) {
+    if (weapon.ammo_types.length === 0) continue;
+    const magazineSize = Math.max(1, weapon.magazine ?? 1);
+    const tags = getAllTags(weapon);
+    const total = tags.includes('LimitedAmmoWeapon')
+      ? 2
+      : canAutofire && tags.includes('AutofireWeapon')
+        ? roundToMagazine(60, magazineSize)
+        : roundToMagazine((weapon.rate_of_fire ?? 1) * 12, magazineSize);
+    const amountPerType = roundToMagazine(Math.ceil(total / weapon.ammo_types.length), magazineSize);
+    for (const ammoType of weapon.ammo_types) {
+      const next = { magazineSize, total: amountPerType };
+      const current = requirements.get(ammoType);
+      if (!current || next.total > current.total
+        || (next.total === current.total && next.magazineSize > current.magazineSize)) {
+        requirements.set(ammoType, next);
       }
     }
   }
 
-  for (const [ammoType, data] of required) {
-    let totalRequired = data.magazineSize;
-    if (['Bullets', 'Arrows', 'Slugs'].includes(ammoType)) totalRequired = Math.max(20, data.magazineSize * 2);
-    if (ammoType === 'Rockets') totalRequired = 4;
-    if (ammoType === 'Net') totalRequired = 2;
-    const left = totalRequired - data.ammoAdded;
-    if (left <= 0) continue;
-    const basic = Object.entries(catalog.ammo).find(([, modification]) => modification.types.includes(ammoType));
-    if (!basic) throw new Error(`No basic ammo supports ${ammoType}`);
-    tryAdd(ammoType, basic[0], left, 999_999);
+  const makeAmmo = (ammoType: string, modification: string): Item => {
+    const data = catalog.ammo[modification];
+    if (!data) throw new Error(`Unknown ammo modification: ${modification}`);
+    const price = ['Grenade', 'Rocket'].includes(ammoType) ? data.price * 10 : data.price;
+    return createItem({
+      name: data.name ?? `${ammoType} (${modification})`,
+      type: 'ammo',
+      price,
+    });
+  };
+
+  const amountsAdded = new Map([...requirements.keys()].map((type) => [type, 0]));
+  if (template.rules.allow_non_basic_ammo) {
+    let budget = pythonRound(distributionValue(random, template.rank.items_budget.ammo));
+    while (true) {
+      const candidates = [...requirements].flatMap(([ammoType, requirement]) => {
+        const amount = requirement.magazineSize;
+        if ((amountsAdded.get(ammoType) ?? 0) + amount > requirement.total) return [];
+        const affordable = template.role.preferred_ammo
+          .filter((modification) => modification !== 'Basic')
+          .filter((modification) => catalog.ammo[modification]?.types.includes(ammoType))
+          .map((modification) => ({
+            modification,
+            cost: makeAmmo(ammoType, modification).price * amount,
+          }))
+          .filter(({ cost }) => cost <= budget);
+        return affordable.length ? [{ ammoType, amount, affordable }] : [];
+      });
+      if (!candidates.length) break;
+      const candidate = random.choice(candidates);
+      const modification = chooseExponentialRandomElement(
+        random,
+        candidate.affordable.map((entry) => entry.modification),
+      );
+      const cost = candidate.affordable.find((entry) => entry.modification === modification)!.cost;
+      addInventoryItem(npc, makeAmmo(candidate.ammoType, modification), candidate.amount);
+      amountsAdded.set(candidate.ammoType, (amountsAdded.get(candidate.ammoType) ?? 0) + candidate.amount);
+      budget -= cost;
+    }
+  }
+
+  for (const [ammoType, requirement] of requirements) {
+    const amount = requirement.total - (amountsAdded.get(ammoType) ?? 0);
+    if (amount <= 0) continue;
+    const basic = catalog.ammo.Basic?.types.includes(ammoType)
+      ? 'Basic'
+      : Object.keys(catalog.ammo).find((name) => catalog.ammo[name]!.types.includes(ammoType));
+    if (!basic) throw new Error(`No ammo configuration supports ${ammoType}`);
+    addInventoryItem(npc, makeAmmo(ammoType, basic), amount);
   }
 }
 
 function generateEquipment(npc: Npc, template: Template, catalog: Catalog, random: NumpyRandom): void {
   if (template.rules.allow_equipment) {
     const equipment = catalog.equipment.map(createItem);
-    const preferred = template.role.preferred_equipment;
+    const equipmentByName = new Map(equipment.map((item) => [item.name, item]));
+    const preferred = template.role.preferred_equipment.filter((name) => equipmentByName.has(name));
+    const trained = [...npc.skills.values()].filter((entry) => entry.level > 0);
+    const preferredTags = new Set(trained.flatMap((entry) =>
+      catalog.skills[entry.skill.name]?.preferred_equipment_tags ?? [],
+    ));
+    const skillPreferred = equipment
+      .filter((item) => getAllTags(item).some((tag) => preferredTags.has(tag))
+        || trained.some((entry) => item.beautiful_names_by_skill[entry.skill.name]))
+      .map((item) => item.name);
     let budget = pythonRound(distributionValue(random, template.rank.items_budget.equipment));
     const maximum = Math.max(pythonRound(distributionValue(random, template.rank.items_num_budget.equipment)), 0);
     let count = 0;
     for (let attempt = 0; attempt < RANDOM_GENERATING_NUM_ATTEMPTS; attempt += 1) {
       if (count === maximum) break;
-      const name = chooseExponentialRandomElement(random, preferred);
-      const item = equipment.find((entry) => entry.name === name);
-      if (!item) throw new Error(`Unknown preferred equipment: ${name}`);
+      const pool = skillPreferred.length ? skillPreferred : preferred;
+      if (!pool.length) break;
+      const name = chooseExponentialRandomElement(random, pool);
+      const sourceItem = equipmentByName.get(name);
+      if (!sourceItem) continue;
+      const item = copyItem(sourceItem);
+      const beautifulName = trained
+        .filter((entry) => item.beautiful_names_by_skill[entry.skill.name])
+        .sort((left, right) =>
+          right.level - left.level || pythonStringCompare(right.skill.name, left.skill.name),
+        )[0];
+      if (beautifulName) item.beautiful_name = item.beautiful_names_by_skill[beautifulName.skill.name]!;
       if (!template.rules.allow_drugs && getAllTags(item).includes('Airhypo')) continue;
       if (findInventoryEntry(npc, item)) continue;
+      const similarInventory = [...npc.inventory.values()]
+        .some((entry) => containsAnyUniqueTag(item, entry.item));
+      if (similarInventory) {
+        const skillIndex = skillPreferred.indexOf(name);
+        if (skillIndex >= 0) skillPreferred.splice(skillIndex, 1);
+        const preferredIndex = preferred.indexOf(name);
+        if (preferredIndex >= 0) preferred.splice(preferredIndex, 1);
+        continue;
+      }
       if (traverseInventory(npc.cyberware).some((node) => containsAnyUniqueTag(item, node.item))) continue;
       if (item.price > budget) continue;
       budget -= item.price;
       setInventoryItem(npc, item, 1);
-      preferred.splice(preferred.indexOf(name), 1);
+      const skillIndex = skillPreferred.indexOf(name);
+      if (skillIndex >= 0) skillPreferred.splice(skillIndex, 1);
+      const preferredIndex = preferred.indexOf(name);
+      if (preferredIndex >= 0) preferred.splice(preferredIndex, 1);
       count += 1;
     }
   }
@@ -502,10 +600,11 @@ function generateEquipment(npc: Npc, template: Template, catalog: Catalog, rando
   }
 }
 
-function pickArmor(budget: number, preferredArmorClass: number, armor: readonly Item[]): [Item | null, number] {
-  for (const item of armor) {
-    if (item.price > budget) continue;
-    if ((item.armor_class ?? 0) > preferredArmorClass) continue;
+function pickArmor(budget: number, preferredNames: readonly string[], armor: readonly Item[]): [Item | null, number] {
+  const byName = new Map(armor.map((item) => [item.name, item]));
+  for (const name of preferredNames) {
+    const item = byName.get(name);
+    if (!item || item.price > budget) continue;
     return [item, item.price];
   }
   return [null, 0];
@@ -514,16 +613,31 @@ function pickArmor(budget: number, preferredArmorClass: number, armor: readonly 
 function generateArmor(npc: Npc, template: Template, catalog: Catalog, random: NumpyRandom): void {
   const armorCyberware = traverseInventory(npc.cyberware).find((node) => node.item.tags.includes('Armor'))?.item;
   if (armorCyberware) {
-    addUniqueItem(npc.armor, cloneItem(armorCyberware, { name: `Head: ${armorCyberware.name}`, price: 0 }), armorSort);
-    addUniqueItem(npc.armor, cloneItem(armorCyberware, { name: `Body: ${armorCyberware.name}`, price: 0 }), armorSort);
+    addUniqueItem(npc.armor, cloneItem(armorCyberware, {
+      price: 0,
+      armor_locations: ['Head', 'Body'],
+    }), armorSort);
   } else if (template.rules.allow_armor) {
-    const armor = catalog.armor.map(createItem).sort((a, b) => b.price - a.price);
+    const armor = catalog.armor.map(createItem);
+    const bodyOptions = armor.filter((item) => item.armor_locations.includes('Body'));
+    const headOptions = armor.filter((item) => item.armor_locations.includes('Head'));
     const budget = pythonRound(distributionValue(random, template.rank.items_budget.armor));
-    let [body, spent] = pickArmor(pythonRound(budget * 0.8), template.role.preferred_armor_class, armor);
-    if (!body) [body, spent] = pickArmor(budget, template.role.preferred_armor_class, armor);
-    if (body) addUniqueItem(npc.armor, cloneItem(body, { name: `Body: ${body.name}` }), armorSort);
-    const [head] = pickArmor(budget - spent, template.role.preferred_armor_class, armor);
-    if (head) addUniqueItem(npc.armor, cloneItem(head, { name: `Head: ${head.name}` }), armorSort);
+    let [body, spent] = pickArmor(
+      pythonRound(budget * 0.8),
+      template.role.preferred_armor.body,
+      bodyOptions,
+    );
+    if (!body) [body, spent] = pickArmor(budget, template.role.preferred_armor.body, bodyOptions);
+    if (body) addUniqueItem(npc.armor, cloneItem(body), armorSort);
+    if (body && !body.armor_locations.includes('Head')) {
+      const compatibleHead = headOptions.filter((item) => (item.armor_class ?? 0) <= (body.armor_class ?? 0));
+      const [head] = pickArmor(
+        budget - spent,
+        template.role.preferred_armor.head,
+        compatibleHead,
+      );
+      if (head) addUniqueItem(npc.armor, cloneItem(head), armorSort);
+    }
   }
 
   for (const shield of getAllItems(npc).filter((item) => item.unique_tags.includes('Shield'))) {
@@ -600,6 +714,63 @@ function generateTraumaTeam(npc: Npc, template: Template, random: NumpyRandom): 
   npc.traumaTeamStatus = random.choice(statuses, weights);
 }
 
+function generateLifepath(catalog: Catalog, nationality: string | null, random: NumpyRandom): Npc['lifepath'] {
+  const pick = <T>(values: readonly T[]): T => random.choice(values);
+  const count = () => Math.max(0, random.randint(1, 11) - 7);
+  let culturalOrigin: string;
+  let language: string | undefined;
+
+  try {
+    const locale = new Intl.Locale((nationality ?? '').replace('_', '-'));
+    const region = locale.region;
+    const languageCode = locale.language;
+    if (!region || !languageCode) throw new Error('Locale has no territory or language');
+    culturalOrigin = new Intl.DisplayNames(['en'], { type: 'region' }).of(region) ?? region;
+    language = new Intl.DisplayNames(['en'], { type: 'language' }).of(languageCode) ?? languageCode;
+  } catch {
+    if (nationality) {
+      culturalOrigin = nationality;
+    } else {
+      const origin = pick(catalog.lifepath.cultural_origins);
+      culturalOrigin = origin.region;
+      language = random.choice(origin.languages);
+    }
+  }
+
+  const friends = Array.from({ length: count() }, () => pick(catalog.lifepath.friend_relationship));
+  const enemies = Array.from({ length: count() }, () => ({
+    enemy: pick(catalog.lifepath.enemy),
+    cause: pick(catalog.lifepath.enemy_cause),
+    wronged_party: random.choice(['You', 'They']),
+    resources: pick(catalog.lifepath.enemy_resources),
+    reaction: pick(catalog.lifepath.sweet_revenge),
+  }));
+  const tragicLoveAffairs = Array.from(
+    { length: count() },
+    () => pick(catalog.lifepath.tragic_love_affair),
+  );
+
+  return {
+    cultural_origin: culturalOrigin,
+    ...(language ? { language } : {}),
+    personality: pick(catalog.lifepath.personality),
+    clothing_style: pick(catalog.lifepath.clothing_style),
+    hairstyle: pick(catalog.lifepath.hairstyle),
+    affectation: pick(catalog.lifepath.affectation),
+    value_most: pick(catalog.lifepath.value_most),
+    feel_about_people: pick(catalog.lifepath.feel_about_people),
+    valued_person: pick(catalog.lifepath.valued_person),
+    valued_possession: pick(catalog.lifepath.valued_possession),
+    family_background: pick(catalog.lifepath.family_background),
+    childhood_environment: pick(catalog.lifepath.childhood_environment),
+    family_crisis: pick(catalog.lifepath.family_crisis),
+    friends,
+    enemies,
+    tragic_love_affairs: tragicLoveAffairs,
+    life_goal: pick(catalog.lifepath.life_goal),
+  };
+}
+
 export async function generateNpc(
   catalog: Catalog,
   inputOptions: GenerateOptions,
@@ -618,6 +789,7 @@ export async function generateNpc(
   const template: Template = { rank, role, rules: options, nationality };
   const meatbody = createItem(catalog.cyberware.find((entry) => entry.name === 'Meatbody'));
   const npc = createNpc(meatbody);
+  npc.role = role.name;
 
   progress(onProgress, 'Allocating stats and skills', 0.08);
   generateStatsAndSkills(npc, template, catalog, random);
@@ -637,11 +809,16 @@ export async function generateNpc(
   generateTraumaTeam(npc, template, random);
   progress(onProgress, 'Generating identity', 0.90);
   generateIdentity(npc, rank, nationality, random, seed);
+  if (options.allow_lifepath) npc.lifepath = generateLifepath(catalog, nationality, random);
 
   let warning: string | null = null;
   try {
+    if (!options.allow_description) {
+      progress(onProgress, 'Operative ready', 1);
+      return { npc, rank, role, options, seed, warning };
+    }
     const description = await generateAiDescription(npc, rank, role, nationality, catalog, options, seed, referenceEntries);
-    if (description) npc.description = description;
+    npc.description = description;
   } catch (error) {
     warning = `AI description was not generated: ${error instanceof Error ? error.message : String(error)}`;
   }
@@ -651,6 +828,7 @@ export async function generateNpc(
 
 export function weaponSkillName(item: Item, catalog: Catalog): string | null {
   if (item.skill) return item.skill;
+  if (catalog.weaponSkills[item.name]) return catalog.weaponSkills[item.name]!;
   for (const tag of getAllTags(item)) {
     if (catalog.weaponSkills[tag]) return catalog.weaponSkills[tag]!;
   }

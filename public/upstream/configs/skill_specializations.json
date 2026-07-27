@@ -1,0 +1,44 @@
+{
+  "Science": [
+    "Science (Chemistry)",
+    "Science (Biology)",
+    "Science (Mathematics)",
+    "Science (Physics)",
+    "Science (History)"
+  ],
+  "MartialArts": [
+    "MartialArts (Aikido)",
+    "MartialArts (Karate)",
+    "MartialArts (Judo)",
+    "MartialArts (Taekwondo)",
+    "MartialArts (Arasaka-te)",
+    "MartialArts (Arnis)",
+    "MartialArts (Boxing)",
+    "MartialArts (Capoeira)",
+    "MartialArts (Choy Li Fut)",
+    "MartialArts (Drunken Fist)",
+    "MartialArts (Gun Fu)",
+    "MartialArts (Jujutsu)",
+    "MartialArts (Kendo)",
+    "MartialArts (Krav Maga)",
+    "MartialArts (Kung Fu)",
+    "MartialArts (Kyudo)",
+    "MartialArts (Militech Commando Training)",
+    "MartialArts (Muay Thai)",
+    "MartialArts (Multiarm Melee)",
+    "MartialArts (PanzerFaust)",
+    "MartialArts (Silat)",
+    "MartialArts (Sov-System)",
+    "MartialArts (Sumo)",
+    "MartialArts (Tai Chi)",
+    "MartialArts (Thamoc)",
+    "MartialArts (Thrash Sambo)",
+    "MartialArts (Wrestling)"
+  ],
+  "PlayInstrument": [
+    "PlayInstrument (Guitar)",
+    "PlayInstrument (Drums)",
+    "PlayInstrument (Singing)",
+    "PlayInstrument (Piano)"
+  ]
+}

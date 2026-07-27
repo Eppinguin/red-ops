@@ -18,6 +18,7 @@ import type {
   EncounterCombatant,
   RangedDefenseMode,
 } from '../encounter/types';
+import { useScrollLock } from './useScrollLock';
 
 type SelectEvent = TargetedEvent<HTMLSelectElement>;
 type MouseDivEvent = TargetedEvent<HTMLDivElement, MouseEvent>;
@@ -45,6 +46,7 @@ export function AttackResolverDialog({
   onClose: () => void;
   onOpenRangeReference: () => void;
 }) {
+  useScrollLock(true);
   const targets = useMemo(() => preferredTargets(attacker, combatants), [attacker, combatants]);
   const bands = useMemo(() => validRangeBands(attack.rangeProfile), [attack.rangeProfile]);
   const [targetId, setTargetId] = useState(targets[0]?.id ?? '');

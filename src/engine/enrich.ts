@@ -169,7 +169,9 @@ function explanationForItem(core: GeneratedCore, catalog: Catalog, item: Item): 
     ].filter(Boolean).join(' ');
   }
   if (item.type === 'armor') {
-    return `Selected within the armor budget and the role's preferred SP ceiling of ${core.role.preferred_armor_class}.`;
+    return [...core.role.preferred_armor.head, ...core.role.preferred_armor.body].includes(item.name)
+      ? `Selected from the ${humanize(core.role.name)} profile's preferred armor within budget.`
+      : 'Selected from the permitted armor budget.';
   }
   if (item.type === 'cyberware') {
     return core.role.preferred_cyberware.includes(item.name)

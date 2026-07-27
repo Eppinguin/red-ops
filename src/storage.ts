@@ -1,4 +1,5 @@
-import type { GeneratedNpcView } from './engine/types';
+import type { GeneratedNpcView, InventoryNode, Item, Npc, Role } from './engine/types';
+import { DEFAULT_OPTIONS } from './engine/types';
 
 const DATABASE = 'red-ops-npc-library';
 const STORE = 'npcs';
@@ -50,17 +51,64 @@ async function transact<T>(mode: IDBTransactionMode, action: (store: IDBObjectSt
   }
 }
 
-function sanitizedView(view: GeneratedNpcView): GeneratedNpcView {
+function normalizeItem(item: Item): Item {
+  return {
+    ...item,
+    beautiful_name: item.beautiful_name ?? null,
+    beautiful_names_by_skill: { ...(item.beautiful_names_by_skill ?? {}) },
+    beautiful_names_by_quality: { ...(item.beautiful_names_by_quality ?? {}) },
+    armor_locations: [...(item.armor_locations ?? [])],
+  };
+}
+
+function normalizeInventoryNode(node: InventoryNode): InventoryNode {
+  return {
+    ...node,
+    item: normalizeItem(node.item),
+    children: node.children.map(normalizeInventoryNode),
+  };
+}
+
+function normalizeNpc(npc: Npc, role: Role): Npc {
+  return {
+    ...npc,
+    role: npc.role ?? role.name,
+    lifepath: structuredClone(npc.lifepath ?? {}),
+    cyberware: normalizeInventoryNode(npc.cyberware),
+    armor: npc.armor.map(normalizeItem),
+    weapons: npc.weapons.map(normalizeItem),
+    inventory: new Map([...npc.inventory].map(([key, entry]) => [
+      key,
+      { ...entry, item: normalizeItem(entry.item) },
+    ])),
+  };
+}
+
+export function normalizeSavedNpcView(view: GeneratedNpcView): GeneratedNpcView {
   const clone = structuredClone(view);
+  const role = {
+    ...clone.role,
+    preferred_armor: {
+      head: [...(clone.role.preferred_armor?.head ?? [])],
+      body: [...(clone.role.preferred_armor?.body ?? [])],
+    },
+  };
   return {
     ...clone,
-    options: { ...clone.options, model_api_key: null },
+    role,
+    npc: normalizeNpc(clone.npc, role),
+    options: {
+      ...DEFAULT_OPTIONS,
+      ...clone.options,
+      forbidden_skills: [...(clone.options.forbidden_skills ?? [])],
+      model_api_key: null,
+    },
     revisions: Array.isArray(clone.revisions) ? clone.revisions : [],
   };
 }
 
 function normalizeRecord(record: SavedNpcRecord): SavedNpcRecord {
-  return { ...record, view: sanitizedView(record.view) };
+  return { ...record, view: normalizeSavedNpcView(record.view) };
 }
 
 export async function saveNpc(view: GeneratedNpcView): Promise<SavedNpcRecord> {
@@ -69,7 +117,7 @@ export async function saveNpc(view: GeneratedNpcView): Promise<SavedNpcRecord> {
     id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${crypto.getRandomValues(new Uint32Array(1))[0]}`,
     label: `${view.npc.name} ${view.npc.surname}`,
     savedAt,
-    view: sanitizedView(view),
+    view: normalizeSavedNpcView(view),
   };
   await transact('readwrite', (store) => store.put(record));
   return record;

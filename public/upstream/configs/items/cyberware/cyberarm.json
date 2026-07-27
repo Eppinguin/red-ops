@@ -1,0 +1,733 @@
+[
+  {
+    "name": "Cyberarm",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Shoulders",
+      "Artificial Shoulder Mount"
+    ],
+    "container_capacity": 4,
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Neo-Soviet Cyberarm",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Shoulders",
+      "Artificial Shoulder Mount"
+    ],
+    "required_condition": [
+      "can_add = npc.get_stat_or_skill_value(\"BODY\").get_total() >= 8"
+    ],
+    "container_capacity": 3,
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Big Knucks",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "MediumMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Cyberdeck",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "Cyberdeck"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 3,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Grapple Hand",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Action"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Medscanner",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "Medscanner"
+    ],
+    "modifiers": [
+      {
+        "name": "FirstAid",
+        "simple": 2
+      },
+      {
+        "name": "Paramedic",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Grenade Launcher",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "GrenadeLauncher"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "LimitedAmmoWeapon"
+    ],
+    "damage": "6d6",
+    "rate_of_fire": 1,
+    "magazine": 2,
+    "ammo_types": [
+      "Grenade"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Melee Weapon (Light)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "LightMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "1d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Melee Weapon (Medium)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "MediumMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Melee Weapon (Heavy)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "HeavyMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "3d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Shield",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Action"
+    ],
+    "unique_tags": [
+      "Shield"
+    ],
+    "armor_class": 10,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 3,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Ranged Weapon (Medium Pistol)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "MediumPistol",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2,
+    "magazine": 12,
+    "ammo_types": [
+      "Medium Pistol"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Ranged Weapon (Heavy Pistol)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "HeavyPistol",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "3d6",
+    "rate_of_fire": 2,
+    "magazine": 8,
+    "ammo_types": [
+      "Heavy Pistol"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Ranged Weapon (Very Heavy Pistol)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "VeryHeavyPistol",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "magazine": 8,
+    "ammo_types": [
+      "Very Heavy Pistol"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Ranged Weapon (SMG)",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "SMG",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "AutofireWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 1,
+    "magazine": 30,
+    "ammo_types": [
+      "Medium Pistol"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Quick Change Mount",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Action"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Rippers",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "MediumMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Scratchers",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "LightMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "1d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Shoulder Cam",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "VideoCamera"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Slice 'N Dice",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "MediumMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Subdermal Grip",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Techscanner",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "Techscanner"
+    ],
+    "modifiers": [
+      {
+        "name": "AirVehicleTech",
+        "simple": 2
+      },
+      {
+        "name": "BasicTech",
+        "simple": 2
+      },
+      {
+        "name": "Cybertech",
+        "simple": 2
+      },
+      {
+        "name": "Demolitions",
+        "simple": 2
+      },
+      {
+        "name": "ElectronicsSecurityTech",
+        "simple": 2
+      },
+      {
+        "name": "Forgery",
+        "simple": 2
+      },
+      {
+        "name": "LandVehicleTech",
+        "simple": 2
+      },
+      {
+        "name": "PickLock",
+        "simple": 2
+      },
+      {
+        "name": "AirVeSeaVehicleTechhicleTech",
+        "simple": 2
+      },
+      {
+        "name": "Weaponstech",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Tool Hand",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "Techtool"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Wolvers",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "HeavyMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "3d6",
+    "rate_of_fire": 2,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Flashbulb",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Action"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Integrated Cyberdeck Upgrade",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "required_cyberware": [
+      "Cyberdeck"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Net Launcher",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "Shotgun",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "AuxiliaryWeapon",
+      "LimitedAmmoWeapon"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "damage": "0d0",
+    "rate_of_fire": 1,
+    "magazine": 1,
+    "ammo_types": [
+      "Net"
+    ],
+    "size_in_container": 3,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Popup Shotgun",
+    "type": "cyberware",
+    "price": 1000,
+    "unique_tags": [
+      "Shotgun",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "AuxiliaryWeapon"
+    ],
+    "damage": "5d6",
+    "rate_of_fire": 1,
+    "magazine": 2,
+    "ammo_types": [
+      "Shotgun Slug",
+      "Shotgun Shell"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 3,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Integrated Cyberscanner",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Cyberpillow",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1
+  },
+  {
+    "name": "Holo Projector Palm",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "PersonalPak KibbleWarmer",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Pursuit Security Inc. Personal Shredder",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "ChainRipp",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "VeryHeavyMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "quality": "excellent",
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "required_containers": [
+      "Cyberarm"
+    ],
+    "size_in_container": 4,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Gang Jazzler",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Action"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm",
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Watch-Man",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "Agent"
+    ],
+    "required_containers": [
+      "Cyberarm",
+      "Neo-Soviet Cyberarm"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Blitzkrieg Arc-Thrower Cyberarm",
+    "type": "cyberware",
+    "price": 1000,
+    "quality": "poor",
+    "unique_tags": [
+      "Shotgun",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "magazine": 32,
+    "ammo_types": [
+      "MagnaSlot BatteryBrick"
+    ],
+    "skill": "HeavyWeapons",
+    "required_containers": [
+      "Shoulders"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  }
+]

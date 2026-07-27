@@ -22,6 +22,7 @@ export function mergeNpcSection(current: Npc, candidate: Npc, section: NpcSectio
     next.age = candidate.age;
     next.name = candidate.name;
     next.surname = candidate.surname;
+    next.lifepath = structuredClone(candidate.lifepath);
     next.description = '';
   } else if (section === 'description') {
     next.description = candidate.description;

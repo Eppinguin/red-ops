@@ -1,0 +1,144 @@
+[
+  {
+    "name": "Artificial Shoulder Mount",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Borgware"
+    ],
+    "container_capacity": 2,
+    "size_in_container": 1,
+    "max_equipped_items": 2,
+    "max_humanity_loss": 4
+  },
+  {
+    "name": "Implanted Linear Frame β (Beta)",
+    "type": "cyberware",
+    "price": 5000,
+    "modifier_applying_priority": -1,
+    "unique_tags": [
+      "Skeleton"
+    ],
+    "modifiers": [
+      {
+        "name": "BODY",
+        "complicated": [
+          "new_value = 14",
+          "new_modifier = new_value - start_value"
+        ]
+      }
+    ],
+    "required_containers": [
+      "Borgware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 4,
+    "required_cyberware": [
+      "Grafted Muscle and Bone Lace",
+      "Grafted Muscle and Bone Lace"
+    ],
+    "required_condition": [
+      "can_add = npc.get_stat_or_skill_value(\"BODY\").get_total() >= 8"
+    ]
+  },
+  {
+    "name": "Implanted Linear Frame ∑ (Sigma)",
+    "unique_tags": [
+      "Skeleton"
+    ],
+    "type": "cyberware",
+    "price": 1000,
+    "modifier_applying_priority": -1,
+    "modifiers": [
+      {
+        "name": "BODY",
+        "complicated": [
+          "new_value = 12",
+          "new_modifier = new_value - start_value"
+        ]
+      }
+    ],
+    "required_containers": [
+      "Borgware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 4,
+    "required_cyberware": [
+      "Grafted Muscle and Bone Lace"
+    ],
+    "required_condition": [
+      "can_add = npc.get_stat_or_skill_value(\"BODY\").get_total() >= 6"
+    ]
+  },
+  {
+    "name": "MultiOptic Mount",
+    "type": "cyberware",
+    "price": 1000,
+    "unique_tags": [
+      "OpticContainer"
+    ],
+    "required_containers": [
+      "Borgware"
+    ],
+    "container_capacity": 5,
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 4
+  },
+  {
+    "name": "Sensor Array",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Cyberaudio Suite"
+    ],
+    "container_capacity": 5,
+    "size_in_container": 0,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 4
+  },
+  {
+    "name": "Hardened Shielding (Borgware)",
+    "type": "cyberware",
+    "price": 1000,
+    "required_containers": [
+      "Artificial Shoulder Mount",
+      "Implanted Linear Frame β (Beta)",
+      "Implanted Linear Frame ∑ (Sigma)",
+      "MultiOptic Mount",
+      "Sensor Array"
+    ],
+    "size_in_container": 0,
+    "max_humanity_loss": 4
+  },
+  {
+    "name": "Bug Eye",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Borgware"
+    ],
+    "container_capacity": 5,
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 4
+  },
+  {
+    "name": "MonoVision",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "OpticContainer"
+    ],
+    "required_containers": [
+      "Eye Sockets"
+    ],
+    "container_capacity": 3,
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 4,
+    "paired_container": true
+  }
+]

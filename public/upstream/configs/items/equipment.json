@@ -1,0 +1,402 @@
+[
+  {
+    "name": "Agent",
+    "type": "equipment",
+    "unique_tags": [
+      "Agent"
+    ],
+    "modifiers": [
+      {
+        "name": "LibrarySearch",
+        "simple": 2
+      }
+    ],
+    "price": 100
+  },
+  {
+    "name": "Airhypo",
+    "type": "equipment",
+    "price": 50,
+    "unique_tags": [
+      "Airhypo"
+    ]
+  },
+  {
+    "name": "Anti-Smog Breathing Mask",
+    "type": "equipment",
+    "price": 20,
+    "unique_tags": [
+      "AirProtection"
+    ]
+  },
+  {
+    "name": "Audio Recorder",
+    "type": "equipment",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "AudioRecorder"
+    ]
+  },
+  {
+    "name": "Auto Level Dampening Ear Protectors",
+    "type": "equipment",
+    "price": 1000,
+    "unique_tags": [
+      "EarsProtection"
+    ]
+  },
+  {
+    "name": "Binoculars",
+    "type": "equipment",
+    "price": 50,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "Telescope"
+    ]
+  },
+  {
+    "name": "Braindance Viewer",
+    "type": "equipment",
+    "price": 1000,
+    "tags": [
+      "Ability"
+    ]
+  },
+  {
+    "name": "Bug Detector",
+    "type": "equipment",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "BugDetector"
+    ]
+  },
+  {
+    "name": "Carryall",
+    "type": "equipment",
+    "price": 20,
+    "unique_tags": [
+      "Bag"
+    ]
+  },
+  {
+    "name": "Chemical Analyzer",
+    "type": "equipment",
+    "price": 1000,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "ChemicalAnalyzer"
+    ]
+  },
+  {
+    "name": "Computer",
+    "type": "equipment",
+    "price": 50
+  },
+  {
+    "name": "Cyberdeck",
+    "type": "equipment",
+    "price": 500,
+    "unique_tags": [
+      "Cyberdeck"
+    ]
+  },
+  {
+    "name": "Disposable Cell Phone",
+    "type": "equipment",
+    "price": 50
+  },
+  {
+    "name": "Duct Tape",
+    "type": "equipment",
+    "price": 20
+  },
+  {
+    "name": "Electric Guitar/Other Instrument",
+    "beautiful_names_by_skill": {
+      "PlayInstrument (Guitar)": "Electric Guitar",
+      "PlayInstrument (Drums)": "Drum Synthesizer",
+      "PlayInstrument (Piano)": "Synthesizer"
+    },
+    "type": "equipment",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "MusicInstrument"
+    ]
+  },
+  {
+    "name": "Flashlight",
+    "type": "equipment",
+    "price": 20,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "Flashlight"
+    ]
+  },
+  {
+    "name": "Grapple Gun",
+    "type": "equipment",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ]
+  },
+  {
+    "name": "Handcuffs",
+    "type": "equipment",
+    "price": 50,
+    "tags": [
+      "Ability"
+    ]
+  },
+  {
+    "name": "Homing Tracer",
+    "type": "equipment",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "HomingTracer"
+    ]
+  },
+  {
+    "name": "Inflatable Bed & Sleep-bag",
+    "type": "equipment",
+    "price": 20,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "SleepingPlace"
+    ]
+  },
+  {
+    "name": "Lock Picking Set",
+    "type": "equipment",
+    "price": 20,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "Lockpick"
+    ]
+  },
+  {
+    "name": "Medscanner",
+    "type": "equipment",
+    "price": 1000,
+    "unique_tags": [
+      "Medscanner"
+    ],
+    "modifiers": [
+      {
+        "name": "FirstAid",
+        "simple": 2
+      },
+      {
+        "name": "Paramedic",
+        "simple": 2
+      }
+    ]
+  },
+  {
+    "name": "Medtech Bag",
+    "type": "equipment",
+    "price": 100,
+    "unique_tags": [
+      "Bag"
+    ]
+  },
+  {
+    "name": "Personal CarePak",
+    "type": "equipment",
+    "price": 20
+  },
+  {
+    "name": "Pocket Amplifier",
+    "type": "equipment",
+    "price": 50
+  },
+  {
+    "name": "Radar Detector",
+    "type": "equipment",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "RadarDetector"
+    ]
+  },
+  {
+    "name": "Radiation Suit",
+    "type": "equipment",
+    "price": 1000
+  },
+  {
+    "name": "Radio Communicator",
+    "type": "equipment",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "RadioCommunicator"
+    ]
+  },
+  {
+    "name": "Radio Scanner/Music Player",
+    "type": "equipment",
+    "price": 50,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "RadioScannerMusicPlayer"
+    ]
+  },
+  {
+    "name": "Rope (60m/yd)",
+    "type": "equipment",
+    "price": 20
+  },
+  {
+    "name": "Scrambler/Descrambler",
+    "type": "equipment",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "ScramblerDescrambler"
+    ]
+  },
+  {
+    "name": "Smart Glasses",
+    "type": "equipment",
+    "price": 500
+  },
+  {
+    "name": "Tech Bag",
+    "type": "equipment",
+    "price": 500,
+    "unique_tags": [
+      "Bag"
+    ]
+  },
+  {
+    "name": "Techscanner",
+    "type": "equipment",
+    "price": 1000,
+    "unique_tags": [
+      "Techscanner"
+    ],
+    "modifiers": [
+      {
+        "name": "AirVehicleTech",
+        "simple": 2
+      },
+      {
+        "name": "BasicTech",
+        "simple": 2
+      },
+      {
+        "name": "Cybertech",
+        "simple": 2
+      },
+      {
+        "name": "Demolitions",
+        "simple": 2
+      },
+      {
+        "name": "ElectronicsSecurityTech",
+        "simple": 2
+      },
+      {
+        "name": "Forgery",
+        "simple": 2
+      },
+      {
+        "name": "LandVehicleTech",
+        "simple": 2
+      },
+      {
+        "name": "PickLock",
+        "simple": 2
+      },
+      {
+        "name": "AirVeSeaVehicleTechhicleTech",
+        "simple": 2
+      },
+      {
+        "name": "Weaponstech",
+        "simple": 2
+      }
+    ]
+  },
+  {
+    "name": "Techtool",
+    "type": "equipment",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "Techtool"
+    ]
+  },
+  {
+    "name": "Tent and Camping Equipment",
+    "type": "equipment",
+    "price": 50,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "SleepingPlace"
+    ]
+  },
+  {
+    "name": "Video Camera",
+    "type": "equipment",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "VideoCamera"
+    ]
+  },
+  {
+    "name": "Virtuality Goggles",
+    "type": "equipment",
+    "price": 100,
+    "unique_tags": [
+      "VirtualityGoggles"
+    ]
+  },
+  {
+    "name": "Bullet Proof Shield",
+    "type": "equipment",
+    "price": 100,
+    "unique_tags": [
+      "Shield"
+    ],
+    "armor_class": 10
+  }
+]

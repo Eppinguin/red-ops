@@ -18,7 +18,7 @@ No backend or Foundry module is required.
 
 | Source | Pin | Purpose |
 | --- | --- | --- |
-| `n0lavar/cp_red_npc_generator` | `c3dbce65aeb0c812ceb9300ddb138ad2c7f0a8dd` | Generator behavior and configuration |
+| `n0lavar/cp_red_npc_generator` | `dfd4c08c4295c3d34f11a6c75c4d3ae5792ef2a4` | Generator behavior and configuration |
 | `cyberpunk-red-team/fvtt-cyberpunk-red-core` | `v0.92.4` | Optional build-time reference enrichment |
 
 The pinned file lists live in `upstream-manifest.json` and `foundry-content-manifest.json`.
@@ -28,28 +28,28 @@ The pinned file lists live in `upstream-manifest.json` and `foundry-content-mani
 Node.js 22.12 or newer is recommended.
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Build and preview:
 
 ```bash
-npm run build
-npm run preview
+pnpm run build
+pnpm run preview
 ```
 
 ## Useful commands
 
 ```bash
-npm run dev                    # Development server
-npm run build                  # TypeScript build + Vite bundle
-npm run preview                # Preview production output
-npm test                       # Vitest + Node tests
-npm run test:watch             # Vitest watch mode
-npm run test:content           # Foundry normalization tests
-npm run sync:upstream          # Vendor pinned generator data
-npm run content:sync-foundry   # Build optional Foundry snapshot
+pnpm run dev                    # Development server
+pnpm run build                  # TypeScript build + Vite bundle
+pnpm run preview                # Preview production output
+pnpm test                       # Vitest + Node tests
+pnpm run test:watch             # Vitest watch mode
+pnpm run test:content           # Foundry normalization tests
+pnpm run sync:upstream          # Vendor pinned generator data
+pnpm run content:sync-foundry   # Build optional Foundry snapshot
 ```
 
 ## Data sync
@@ -59,7 +59,7 @@ npm run content:sync-foundry   # Build optional Foundry snapshot
 The app can fetch the pinned upstream config at runtime. For a self-contained build, vendor it first:
 
 ```bash
-npm run sync:upstream
+pnpm run sync:upstream
 ```
 
 This writes the files listed in `upstream-manifest.json` to `public/upstream/`.
@@ -71,13 +71,13 @@ This writes the files listed in `upstream-manifest.json` to `public/upstream/`.
 To build the optional reference snapshot from the pinned Foundry release:
 
 ```bash
-npm run content:sync-foundry
+pnpm run content:sync-foundry
 ```
 
 You can point the sync at a local checkout instead of the GitLab API:
 
 ```bash
-FOUNDRY_SOURCE_DIR=/path/to/fvtt-cyberpunk-red-core npm run content:sync-foundry
+FOUNDRY_SOURCE_DIR=/path/to/fvtt-cyberpunk-red-core pnpm run content:sync-foundry
 ```
 
 Optional environment variables: `FOUNDRY_REF`, `FOUNDRY_COMMIT`, `GITLAB_TOKEN`, `CONTENT_SYNC_CONCURRENCY`, and `CONTENT_OUTPUT_DIR`.

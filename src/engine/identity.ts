@@ -79,6 +79,8 @@ function serializableItem(item: Item): Record<string, unknown> {
     name: item.name,
     type: enumName(item.type),
     price: item.price,
+    beautiful_name: item.beautiful_name,
+    beautiful_names_by_skill: { ...item.beautiful_names_by_skill },
     default_hidden: item.default_hidden,
     modifier_applying_priority: item.modifier_applying_priority,
     unique_tags: [...item.unique_tags],
@@ -90,6 +92,7 @@ function serializableItem(item: Item): Record<string, unknown> {
     required_containers: [...item.required_containers],
     max_equipped_items: item.max_equipped_items,
     armor_class: item.armor_class,
+    armor_locations: [...item.armor_locations],
     damage: item.damage,
     rate_of_fire: item.rate_of_fire,
     magazine: item.magazine,
@@ -102,6 +105,9 @@ function serializableItem(item: Item): Record<string, unknown> {
     required_condition: [...item.required_condition],
   };
   if (item.possible_names.length > 0) value.possible_names = [...item.possible_names];
+  if (Object.keys(item.beautiful_names_by_quality).length > 0) {
+    value.beautiful_names_by_quality = { ...item.beautiful_names_by_quality };
+  }
   return value;
 }
 
@@ -132,6 +138,7 @@ function pythonRepr(value: unknown): string {
 
 /** Python json.dumps(..., ensure_ascii=False) with its default separators. */
 function pythonJsonDumps(value: unknown): string {
+  if (value === undefined) return 'null';
   if (value === null) return 'null';
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'number') return Number.isFinite(value) ? String(value) : 'NaN';
@@ -139,10 +146,25 @@ function pythonJsonDumps(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(pythonJsonDumps).join(', ')}]`;
   if (typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => item !== undefined)
       .map(([key, item]) => `${JSON.stringify(key)}: ${pythonJsonDumps(item)}`)
       .join(', ')}}`;
   }
   throw new TypeError(`Unsupported JSON value: ${String(value)}`);
+}
+
+function aiChatCompletionsEndpoint(baseUrl: string): string {
+  const candidate = baseUrl.trim().replace(/^(https?):(?!\/\/)/i, '$1://');
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error(`The AI base URL is invalid: ${baseUrl}`);
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.host) {
+    throw new Error(`The AI base URL must be an HTTP(S) URL with a host: ${baseUrl}`);
+  }
+  return `${candidate.replace(/\/$/, '')}/chat/completions`;
 }
 
 function serializableRank(rank: Rank): Record<string, unknown> {
@@ -171,7 +193,10 @@ function serializableRole(role: Role): Record<string, unknown> {
     preferred_primary_weapons: [...role.preferred_primary_weapons],
     preferred_secondary_weapons: [...role.preferred_secondary_weapons],
     preferred_ammo: [...role.preferred_ammo],
-    preferred_armor_class: role.preferred_armor_class,
+    preferred_armor: {
+      head: [...role.preferred_armor.head],
+      body: [...role.preferred_armor.body],
+    },
     preferred_drugs: [...role.preferred_drugs],
     preferred_equipment: [...role.preferred_equipment],
     min_empathy: role.min_empathy,
@@ -179,7 +204,7 @@ function serializableRole(role: Role): Record<string, unknown> {
   };
 }
 
-function serializableRules(options: GenerateOptions): Record<string, boolean> {
+function serializableRules(options: GenerateOptions): Record<string, unknown> {
   return {
     allow_non_basic_ammo: options.allow_non_basic_ammo,
     allow_grenades: options.allow_grenades,
@@ -193,6 +218,9 @@ function serializableRules(options: GenerateOptions): Record<string, boolean> {
     allow_melee_weapon: options.allow_melee_weapon,
     allow_ranged_weapon: options.allow_ranged_weapon,
     allow_martial_arts: options.allow_martial_arts,
+    allow_description: options.allow_description,
+    allow_lifepath: options.allow_lifepath,
+    forbidden_skills: [...options.forbidden_skills],
   };
 }
 
@@ -211,11 +239,13 @@ function serializableNpc(npc: Npc): Record<string, unknown> {
   for (const entry of npc.inventory.values()) inventory[pythonRepr(serializableItem(entry.item))] = entry.amount;
 
   return {
+    role: npc.role,
     sex: npc.sex,
     nationality: npc.nationality,
     age: npc.age,
     name: npc.name,
     surname: npc.surname,
+    lifepath: npc.lifepath,
     stats: Object.fromEntries(npc.stats),
     skills,
     cyberware: serializableNode(npc.cyberware),
@@ -280,8 +310,9 @@ export async function generateAiDescription(
   options: GenerateOptions,
   seed: number,
   referenceEntries: readonly CatalogEntry[] = [],
-): Promise<string | null> {
-  if (!options.model_id || !options.model_api_key || !options.model_base_url) return null;
+): Promise<string> {
+  if (!options.model_id) throw new Error('Enter a model ID in the AI description settings.');
+  if (!options.model_base_url) throw new Error('Enter an OpenAI-compatible base URL in the AI description settings.');
 
   const references = referenceContext(npc, referenceEntries);
   const context = {
@@ -295,20 +326,36 @@ export async function generateAiDescription(
     ...(references.length ? { reference_context: references } : {}),
   };
 
-  const response = await fetch(`${options.model_base_url.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${options.model_api_key}`, 'Content-Type': 'application/json' },
-    body: pythonJsonDumps({
-      model: options.model_id,
-      messages: [
-        { role: 'system', content: `${catalog.descriptionPrompt} Write the description in ${options.model_language}.${references.length ? ' Use the supplied reference_context for item facts and do not invent mechanics.' : ''}` },
-        { role: 'user', content: pythonJsonDumps(context) },
-      ],
-      temperature: 0.5,
-      seed,
-    }),
+  const endpoint = aiChatCompletionsEndpoint(options.model_base_url);
+  const requestBody = pythonJsonDumps({
+    model: options.model_id,
+    messages: [
+      { role: 'system', content: `${catalog.descriptionPrompt} Write the description in ${options.model_language}.${references.length ? ' Use the supplied reference_context for item facts and do not invent mechanics.' : ''}` },
+      { role: 'user', content: pythonJsonDumps(context) },
+    ],
+    temperature: 0.5,
+    seed,
   });
-  if (!response.ok) throw new Error(`AI server returned HTTP ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        ...(options.model_api_key ? { Authorization: `Bearer ${options.model_api_key}` } : {}),
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Could not reach the AI server at ${endpoint}: ${reason}. Check the base URL and browser CORS access.`);
+  }
+  if (!response.ok) {
+    const detail = (await response.text()).trim().slice(0, 300);
+    throw new Error(`AI server returned HTTP ${response.status}${detail ? `: ${detail}` : ''}`);
+  }
   const body = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-  return body.choices?.[0]?.message?.content?.trim() || null;
+  const description = body.choices?.[0]?.message?.content?.trim();
+  if (!description) throw new Error('AI server returned no description text.');
+  return description;
 }

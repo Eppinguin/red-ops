@@ -9,6 +9,7 @@ export const THEMES = [
   { id: 'ice', name: 'Ice', blurb: 'Cold cyan on gunmetal. Calmest for long sessions.' },
   { id: 'amber', name: 'Amber', blurb: 'Monochrome CRT phosphor.' },
   { id: 'militech', name: 'Militech', blurb: 'Alert-red command console.' },
+  { id: 'chrome', name: 'Chrome', blurb: 'Bare white on true black. Monochrome.' },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]['id'];

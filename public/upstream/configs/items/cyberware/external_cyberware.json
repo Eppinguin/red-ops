@@ -1,0 +1,105 @@
+[
+  {
+    "name": "Hidden Holster",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Skin Weave",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Armor"
+    ],
+    "unique_tags": [
+      "SubdermalArmor"
+    ],
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "armor_class": 7,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Subdermal Armor",
+    "type": "cyberware",
+    "price": 1000,
+    "tags": [
+      "Armor"
+    ],
+    "unique_tags": [
+      "SubdermalArmor"
+    ],
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "armor_class": 11,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Subdermal Pocket",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "External Vidscreen",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "required_cyberware": [
+      "Biomonitor"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "OptiShield",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "LightFlashesProtection"
+    ],
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "FleshWeave",
+    "type": "cyberware",
+    "price": 1000,
+    "tags": [
+      "Armor"
+    ],
+    "unique_tags": [
+      "SubdermalArmor"
+    ],
+    "required_containers": [
+      "External Cyberware"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "armor_class": 7,
+    "max_humanity_loss": 2
+  }
+]

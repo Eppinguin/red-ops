@@ -1,0 +1,282 @@
+[
+  {
+    "name": "Cybereye",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Eye Sockets",
+      "MultiOptic Mount"
+    ],
+    "container_capacity": 3,
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Sponsored Cybereye",
+    "type": "cyberware",
+    "price": 50,
+    "required_containers": [
+      "Eye Sockets",
+      "MultiOptic Mount"
+    ],
+    "container_capacity": 2,
+    "size_in_container": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Anti-Dazzle",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "LightFlashesProtection"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Chyron",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Color Shift",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Dartgun",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "HiddenRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "VeryHeavyPistol",
+      "AuxiliaryWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "magazine": 1,
+    "ammo_types": [
+      "Arrow"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 3,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Image Enhance",
+    "type": "cyberware",
+    "price": 500,
+    "modifiers": [
+      {
+        "name": "Perception",
+        "simple": 2
+      },
+      {
+        "name": "LipReading",
+        "simple": 2
+      },
+      {
+        "name": "ConcealRevealObject",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Low Light/IR/UV",
+    "type": "cyberware",
+    "price": 500,
+    "unique_tags": [
+      "ImprovedVision"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "MicroOptics",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "MicroVideo",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "VideoCamera"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 2,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Radiation Detector",
+    "type": "cyberware",
+    "price": 1000,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Targeting Scope",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "TeleOptics",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "Telescope"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Virtuality",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "VirtualityGoggles"
+    ],
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "must_be_paired": true,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Hardened Shielding (Cybereye)",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye",
+      "Sponsored Cybereye"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Chipware Compartment",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Bug Eye",
+      "MonoVision",
+      "Cybereye"
+    ],
+    "size_in_container": 3,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  }
+]

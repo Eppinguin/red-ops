@@ -6,6 +6,7 @@ import {
   SINGLE_SHOT_DVS,
   THROWN_WEAPON_DVS,
 } from '../encounter/rangeDvs';
+import { useScrollLock } from './useScrollLock';
 
 type MouseDivEvent = TargetedEvent<HTMLDivElement, MouseEvent>;
 
@@ -23,8 +24,15 @@ function DvTable({
       <h3>{title}</h3>
       <div class="range-table-scroll">
         <table class="range-dv-table">
-          <thead><tr><th>Weapon type</th>{bands.map((band) => <th key={band.id}>{band.label}</th>)}</tr></thead>
-          <tbody>{rows.map((row) => <tr key={row.label}><th>{row.label}</th>{bands.map((band) => <td key={band.id}>{row.values[band.id] ?? '—'}</td>)}</tr>)}</tbody>
+          <thead><tr><th scope="col">Weapon type</th>{bands.map((band) => <th key={band.id} scope="col">{band.label}</th>)}</tr></thead>
+          <tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{bands.map((band) => {
+            const dv = row.values[band.id];
+            // A band the weapon cannot reach is a rules fact, not missing data;
+            // dimming it keeps the eye on the DVs that can actually be rolled.
+            return dv === undefined
+              ? <td key={band.id} class="dv-out-of-range" title={`${row.label} cannot reach ${band.label}`}>—</td>
+              : <td key={band.id}>{dv}</td>;
+          })}</tr>)}</tbody>
         </table>
       </div>
     </section>
@@ -32,6 +40,7 @@ function DvTable({
 }
 
 export function RangeDvDialog({ onClose }: { onClose: () => void }) {
+  useScrollLock(true);
   const autofireBands = RANGE_BANDS.slice(0, 5);
   return (
     <div class="encounter-modal-backdrop" onMouseDown={(event: MouseDivEvent) => event.currentTarget === event.target && onClose()}>
@@ -53,7 +62,9 @@ export function RangeDvDialog({ onClose }: { onClose: () => void }) {
           <section class="range-reference-section thrown-reference">
             <h3>Thrown weapons</h3>
             <p>Resolve with Athletics. Thrown weapons cannot be thrown farther than 25 m.</p>
-            <table class="range-dv-table"><thead><tr><th>Range</th><th>DV</th></tr></thead><tbody>{THROWN_WEAPON_DVS.map((row) => <tr key={row.label}><th>{row.label}</th><td>{row.dv}</td></tr>)}</tbody></table>
+            <div class="range-table-scroll">
+              <table class="range-dv-table"><thead><tr><th scope="col">Range</th><th scope="col">DV</th></tr></thead><tbody>{THROWN_WEAPON_DVS.map((row) => <tr key={row.label}><th scope="row">{row.label}</th><td>{row.dv}</td></tr>)}</tbody></table>
+            </div>
           </section>
           <section class="range-dodge-rule">
             <strong>Optional ranged dodge</strong>

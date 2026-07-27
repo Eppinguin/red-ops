@@ -88,7 +88,7 @@ scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
             },
             seed,
             reference.entries,
-          ) ?? '';
+          );
         } catch (error) {
           npc.description = '';
           warning = `AI description was not generated: ${error instanceof Error ? error.message : String(error)}`;

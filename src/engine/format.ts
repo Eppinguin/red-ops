@@ -105,8 +105,57 @@ function findTaggedItem(items: Item[], tag: string): Item | null {
 function weaponDisplay(core: GeneratedCore, item: Item, catalog: Catalog): string {
   const { skill, autofire } = weaponAttackValues(core.npc, item, catalog);
   const prefix = autofire ? `[${skill}(S)/${autofire}(A)]` : `[${skill}]`;
-  const copy = { ...item, name: `${prefix} ${item.name}` };
+  const displayName = item.beautiful_name ?? item.name;
+  const copy = { ...item, name: `${prefix} ${displayName}`, beautiful_name: null };
   return itemToString(copy);
+}
+
+function formatLifepath(core: GeneratedCore): string {
+  const labels: Record<string, string> = {
+    cultural_origin: 'Cultural origin',
+    language: 'Language',
+    personality: 'Personality',
+    clothing_style: 'Clothing style',
+    hairstyle: 'Hairstyle',
+    affectation: 'Affectation',
+    value_most: 'Values most',
+    feel_about_people: 'Feelings about people',
+    valued_person: 'Most valued person',
+    valued_possession: 'Most valued possession',
+    family_background: 'Family background',
+    childhood_environment: 'Childhood environment',
+    family_crisis: 'Family crisis',
+    friends: 'Friends',
+    enemies: 'Enemies',
+    tragic_love_affairs: 'Tragic love affairs',
+    life_goal: 'Life goal',
+  };
+  const lines = ['Lifepath:'];
+  for (const [key, rawValue] of Object.entries(core.npc.lifepath)) {
+    const label = labels[key] ?? pythonTitle(key.replaceAll('_', ' '));
+    if (key === 'family_background' && rawValue && typeof rawValue === 'object' && !Array.isArray(rawValue)) {
+      const value = rawValue as { name: string; description: string };
+      lines.push(`    ${label}: ${value.name}`, `    Background details: ${value.description}`);
+    } else if (key === 'enemies' && Array.isArray(rawValue)) {
+      lines.push(`    ${label}:`);
+      if (!rawValue.length) lines.push('        None');
+      rawValue.forEach((enemy, index) => {
+        const value = enemy as Record<string, string>;
+        lines.push(`        Enemy ${index + 1} - Who: ${value.enemy}`);
+        lines.push(`            Cause: ${value.cause}`);
+        lines.push(`            Wronged party: ${value.wronged_party}`);
+        lines.push(`            Resources: ${value.resources}`);
+        lines.push(`            Reaction: ${value.reaction}`);
+      });
+    } else if (Array.isArray(rawValue)) {
+      lines.push(`    ${label}:`);
+      if (!rawValue.length) lines.push('        None');
+      rawValue.forEach((value, index) => lines.push(`        ${index + 1}. ${String(value)}`));
+    } else {
+      lines.push(`    ${label}: ${String(rawValue)}`);
+    }
+  }
+  return lines.join('\n');
 }
 
 function getInventoryPart(
@@ -124,8 +173,9 @@ export function formatNpcText(core: GeneratedCore, catalog: Catalog): string {
   const allItems = getAllItems(npc);
   const statValues = new Map([...npc.stats.keys()].map((stat) => [stat, getStatOrSkillValue(npc, stat)]));
   let result = `${npc.name} ${npc.surname} (${npc.nationality}, ${npc.age} yo)\n`;
+  if (Object.keys(npc.lifepath).length) result += `\n\n${formatLifepath(core)}\n\n`;
   if (npc.description) {
-    result += `\n${npc.description.split('\n').map((line) => wrapLine(line, 116, '    ')).join('\n')}\n\n`;
+    result += `Description:\n\n${npc.description.split('\n').map((line) => wrapLine(line, 116, '    ')).join('\n')}\n\n`;
   }
   result += `Has items total worth of ${allItems.reduce((sum, item) => sum + item.price, 0)}eb\n\n`;
 
@@ -205,11 +255,13 @@ export function formatNpcText(core: GeneratedCore, catalog: Catalog): string {
 export function toFoundryNpc(core: GeneratedCore): FoundryNpc {
   const { npc } = core;
   return {
+    role: npc.role,
     sex: npc.sex,
     nationality: npc.nationality,
     age: npc.age,
     name: npc.name,
     surname: npc.surname,
+    lifepath: npc.lifepath,
     description: npc.description,
     stats: Object.fromEntries(npc.stats) as FoundryNpc['stats'],
     skills: Object.fromEntries([...npc.skills].map(([name, entry]) => [name, entry.level])),
@@ -226,6 +278,7 @@ export function toFoundryNpc(core: GeneratedCore): FoundryNpc {
 function commandLine(core: GeneratedCore): string {
   const options = core.options;
   const bool = (name: string, value: boolean) => value ? `--${name}` : `--no-${name}`;
+  const quote = (value: string) => `'${value.replaceAll("'", "'\"'\"'")}'`;
   return [
     `--rank=${options.rank}`,
     `--role=${options.role}`,
@@ -242,13 +295,18 @@ function commandLine(core: GeneratedCore): string {
     bool('allow-melee-weapon', options.allow_melee_weapon),
     bool('allow-ranged-weapon', options.allow_ranged_weapon),
     bool('allow-martial-arts', options.allow_martial_arts),
+    bool('allow-description', options.allow_description),
+    bool('allow-lifepath', options.allow_lifepath),
     `--seed=${core.seed}`,
     options.model_id ? `--model-id=${options.model_id}` : '--no-model-id',
     options.model_api_key ? '--model-api-key=\"$MODEL_API_KEY\"' : '--no-model-api-key',
     options.model_base_url ? `--model-base-url=${options.model_base_url}` : '--no-model-base-url',
     `--model-language=${options.model_language}`,
     bool('flat', options.flat),
-    '--no-foundry-json',
+    ...(options.forbidden_skills.length
+      ? [`--forbidden-skills ${options.forbidden_skills.map(quote).join(' ')}`]
+      : []),
+    '--no-json-output',
     '--log-level=INFO',
   ].join(' ');
 }

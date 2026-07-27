@@ -273,6 +273,61 @@
   --player-rgb: 124, 196, 255;
 }
 
+/* CHROME — monochrome white-on-black. The accent is bare metal rather than a
+   hue, so the disposition colours below are the only saturated ink on screen:
+   desaturated far enough to read as greyscale at a glance, but still separable
+   when a GM scans an initiative list. */
+[data-theme="chrome"] {
+  --bg-0: #000000;
+  --bg-1: #050505;
+  --bg-2: #0a0a0a;
+  --bg-deep: #000000;
+  --surface-0: #080808;
+  --surface-1: #0d0d0d;
+  --surface-2: #141414;
+  --surface-3: #1c1c1c;
+  --surface-hover: #232323;
+  --surface-inset: #0a0a0a;
+  --surface-sunken: #040404;
+
+  --ink: #f4f6f7;
+  --ink-soft: #cbd0d3;
+  --muted: #8b9195;
+  --muted-2: #616669;
+  --line: rgba(228, 238, 242, 0.13);
+  --line-strong: rgba(228, 238, 242, 0.3);
+  --line-hot: rgba(255, 255, 255, 0.72);
+
+  --acid: #e8eef1;
+  --acid-hover: #ffffff;
+  --on-accent: #000000;
+  --cyan: #9fb0b8;
+  --orange: #c9d2d6;
+  --amber: #d7dde0;
+  --red: #ff6076;
+  --green: #7fdca8;
+  --violet: #b9bfd6;
+  --blue: #a8b6c4;
+
+  --code-ink: #dfe6ea;
+  --scrollbar-thumb: #313638;
+  --acid-rgb: 232, 238, 241;
+  --cyan-rgb: 159, 176, 184;
+  --orange-rgb: 201, 210, 214;
+  --glow-rgb: 255, 255, 255;
+  --halo-a: 255, 255, 255;
+  --halo-b: 159, 176, 184;
+
+  --enemy: #ff6076;
+  --enemy-rgb: 255, 96, 118;
+  --neutral: #e0b566;
+  --neutral-rgb: 224, 181, 102;
+  --ally: #7fdca8;
+  --ally-rgb: 127, 220, 168;
+  --player: #86c8e8;
+  --player-rgb: 134, 200, 232;
+}
+
 :root {
   color-scheme: dark;
   font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
@@ -374,6 +429,18 @@ code, pre, kbd { font-family: var(--font-ui); }
   min-height: 100vh;
   margin: 0 auto;
   padding: 14px 16px 10px;
+}
+/*
+ * `viewport-fit=cover` lets the background reach the physical screen edges, so
+ * every edge-anchored surface has to re-inset itself past the notch and the home
+ * indicator. Applied here rather than per-component so a new panel inherits it.
+ */
+@supports (padding: max(0px)) {
+  .shell {
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
 }
 .panel {
   position: relative;
@@ -645,6 +712,13 @@ button.active,
   font: var(--fs-2xs)/1.25 var(--font-ui);
 }
 .app-footer b { color: var(--acid); }
+.app-footer a {
+  color: var(--cyan);
+  text-decoration-color: rgba(var(--cyan-rgb), 0.45);
+  text-underline-offset: 3px;
+}
+.app-footer a:hover { color: var(--ink); text-decoration-color: var(--cyan); }
+.app-footer a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 /* ---------- Generator controls ---------- */
 .layout {
@@ -782,9 +856,84 @@ details p { margin: 0; padding: 0 11px 11px; color: var(--muted); font-size: var
 }
 .empty h2 { margin: 17px 0 7px; text-transform: uppercase; letter-spacing: 0.04em; font-size: var(--fs-xl); }
 .empty p { max-width: 620px; margin: 0; color: var(--muted); }
-.progress { width: min(520px, 100%); height: 7px; margin-top: 21px; border: 1px solid var(--line); background: var(--bg-deep); overflow: hidden; }
-.progress i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--acid) 0 20px, var(--cyan) 20px 23px); transition: width 180ms ease; }
+/* Segmented readout. The track is a continuous tinted strip, the fill a solid bar
+ * on top of it, and ::after then cuts the gaps through both at once — so filled
+ * and empty cells share one grid and can never fall out of registration.
+ *
+ * The pitch is a percentage rather than px so a whole number of cells always
+ * spans the track exactly; a px pitch leaves a clipped part-cell at the end once
+ * the bar is fluid. --cells is the count, --cell-gap the gap per cell. */
+.progress {
+  --cells: 32;
+  --cell: calc(100% / var(--cells));
+  --cell-gap: 0.26;
+  position: relative;
+  width: min(520px, 100%);
+  height: 15px;
+  margin-top: 21px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  background: rgba(var(--acid-rgb), 0.09);
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+/* Cuts the gaps out of the fill, and carries the inner rim glow. */
+.progress::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg,
+    transparent 0 calc(var(--cell) * (1 - var(--cell-gap))),
+    var(--bg-deep) calc(var(--cell) * (1 - var(--cell-gap))) var(--cell));
+  box-shadow: inset 0 0 10px rgba(var(--cyan-rgb), 0.12);
+}
+/* The fill is a plain solid bar; the notches are cut afterwards by ::after, which
+ * spans the whole track. One grid governs both filled and empty cells, so they
+ * stay registered no matter how wide the fill is. */
+.progress i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(var(--cyan-rgb), 0.85), var(--acid));
+  filter: drop-shadow(0 0 6px rgba(var(--acid-rgb), 0.5));
+  transition: width 180ms ease;
+}
+/* Scan sweep travelling across the track while data is loading. Sits above the
+ * notch overlay so it reads across the whole bar. */
+.progress.is-busy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(var(--cyan-rgb), 0.28), transparent);
+  width: 34%;
+  animation: progress-scan 1.6s linear infinite;
+}
+@keyframes progress-scan { from { transform: translateX(-100%); } to { transform: translateX(320%); } }
+.progress-readout {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: center;
+  margin-top: 8px;
+  color: var(--muted);
+  font: var(--fs-xs)/1 var(--font-ui);
+  letter-spacing: 0.14em;
+}
+.progress-readout b { color: var(--acid); font-weight: 700; }
+.progress-readout span { color: var(--muted); }
+.progress-readout.is-busy span::after {
+  content: "_";
+  animation: progress-caret 0.9s steps(1) infinite;
+}
+@keyframes progress-caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .progress.is-busy::before { animation: none; }
+  .progress-readout.is-busy span::after { animation: none; }
+  .progress i { transition: none; }
+}
 .empty small { margin-top: 8px; color: var(--muted); font-size: var(--fs-xs); }
+.empty > button { margin-top: 14px; }
 .fatal { padding: 18px; border-left: 4px solid var(--red); }
 .fatal pre { color: #ffbac5; white-space: pre-wrap; }
 
@@ -847,7 +996,16 @@ details p { margin: 0; padding: 0 11px 11px; color: var(--muted); font-size: var
   overflow-x: auto;
   border-bottom: 1px solid var(--line-strong);
   background: var(--surface-sunken);
+  /* Nine tabs never fit a phone. The right-edge fade advertises that the strip
+     scrolls, and the snap points stop a swipe mid-label. */
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
 }
+.tabs button { scroll-snap-align: start; }
+/* With every tab visible the fade would only dim the last label for no reason. */
+@media (min-width: 1121px) { .tabs { mask-image: none; } }
 .tabs button {
   min-height: 42px;
   padding: 8px 13px;
@@ -1630,6 +1788,9 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .dodge-readiness.ready strong { color: var(--cyan); }
 .dodge-readiness.ready span { color: var(--ink-soft); }
 
+/* Only ever painted for the mobile bottom sheet — see the 1320px breakpoint. */
+.inspector-backdrop { display: none; }
+
 .danger-zone { border-color: rgba(255,79,104,.25) !important; }
 .danger-zone button { border-color: rgba(255,79,104,.4); color: #ff97a7; }
 .official-source-notes { color: var(--muted); font-size: var(--fs-xs); }
@@ -1802,17 +1963,154 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 .range-reference-scroll { padding: 13px; }
 .range-reference-section { margin-bottom: 16px; }
 .range-reference-section h3 { margin: 0 0 7px; color: var(--orange); text-transform: uppercase; font: 950 1.08rem var(--font-display); }
-.range-table-scroll { overflow-x: auto; border: 1px solid var(--line); }
-.range-dv-table { width: 100%; min-width: 720px; border-collapse: collapse; }
-.range-dv-table th, .range-dv-table td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: center; font-size: var(--fs-xs); }
-.range-dv-table th { position: sticky; top: 0; color: var(--ink); background: var(--bg-2); }
-.range-dv-table th:first-child, .range-dv-table td:first-child { text-align: left; font-weight: 700; }
-.range-dv-table td { color: var(--muted); }
+/*
+ * Range DV tables.
+ *
+ * Reading these is a two-axis lookup — weapon row against range column — and
+ * the failure mode on a narrow screen is losing track of which row you are in
+ * once the weapon name scrolls off to the left. So the weapon column is pinned
+ * with `position: sticky` and the header row is pinned to the top of the
+ * scroller, which means the scroll container (not the dialog) has to own the
+ * vertical overflow too. Without `overflow-y` here the sticky header has no
+ * scrollport of its own and silently does nothing.
+ */
+.range-table-scroll {
+  overflow: auto;
+  max-height: min(52vh, 460px);
+  border: 1px solid var(--line);
+  /* Tells a touch user the grid pans before they try to swipe the dialog. */
+  overscroll-behavior-x: contain;
+}
+.range-dv-table { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0; }
+.range-dv-table th, .range-dv-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+  font-size: var(--fs-xs);
+  /* Column values are compared down the column; tabular figures keep the
+     digits on a common grid so 13 and 30 line up. */
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Header row: pinned to the top of the scroller. */
+.range-dv-table thead th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  color: var(--ink);
+  background: var(--bg-2);
+  box-shadow: inset 0 -1px var(--line-strong);
+}
+/* Weapon column: pinned to the left edge, so the row label survives a pan. */
+.range-dv-table th:first-child,
+.range-dv-table td:first-child {
+  position: sticky;
+  z-index: 1;
+  left: 0;
+  min-width: 152px;
+  text-align: left;
+  font-weight: 700;
+  background: var(--surface-1);
+  box-shadow: inset -1px 0 var(--line-strong);
+}
+/* The corner cell sits in both sticky axes and must outrank each of them. */
+.range-dv-table thead th:first-child { z-index: 3; background: var(--bg-2); }
+.range-dv-table tbody th { color: var(--ink); }
+/* Reachable DVs are the data; they get full-strength ink and weight. */
+.range-dv-table td { color: var(--ink-soft); font-weight: 600; }
+.range-dv-table td.dv-out-of-range { color: var(--muted-2); font-weight: 400; }
+/* Zebra striping is the other half of staying on the right row. It is set on
+   the cells rather than the row because the sticky column needs its own opaque
+   background — a transparent tint on the row would let scrolled columns show
+   through underneath it. */
+.range-dv-table tbody tr:nth-child(even) > td { background: rgba(var(--cyan-rgb), .028); }
+.range-dv-table tbody tr:nth-child(even) > th { background: var(--surface-2); }
+/* Row highlight on hover, carried across the sticky column too. */
+.range-dv-table tbody tr:hover > td { color: var(--ink); background: rgba(var(--cyan-rgb), .07); }
+.range-dv-table tbody tr:hover > th { background: var(--surface-3); }
+
 .range-reference-two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .thrown-reference { max-width: 600px; }
+.thrown-reference .range-dv-table { min-width: 0; }
 
 /* glossary */
 .glossary-term { color: inherit; border-bottom: 1px dotted var(--cyan); cursor: help; }
+
+/* ---------- Touch input ---------- */
+/*
+ * Keyed to the pointer, not the viewport: a small laptop window still gets the
+ * dense mouse-sized controls, while a tablet at the same width gets targets a
+ * finger can actually hit. The dense TUI look is deliberate, so these grow the
+ * hit area (padding and min-height) rather than the type.
+ */
+@media (pointer: coarse) {
+  button, [role="button"] { min-height: 44px; }
+  .icon-button { width: 44px; height: 44px; min-height: 44px; }
+  input, select, textarea { min-height: 44px; }
+
+  /* Row-level controls in the turn order. The name is the primary way into a
+     combatant's stat block, so it gets a real line height instead of 15px. */
+  .combatant-name { min-height: 34px; }
+  .combatant-name strong { line-height: 34px; }
+  .rename-combatant-button { width: 38px; height: 38px; min-height: 38px; font-size: .95rem; }
+  .turn-marker { width: 100%; min-height: 44px; }
+  .range-dv-chip { min-height: 40px; }
+  .attack-control-buttons button { min-height: 44px; }
+  .row-status span, .status-clear { min-height: 30px; }
+
+  /* Compact density is a mouse affordance; on touch it must not undercut the
+     44px floor, so its overrides are lifted back up. */
+  .density-compact .attack-control-buttons button,
+  .density-compact .row-actions button { min-height: 44px; }
+  .density-toggle button { min-height: 38px; }
+
+  /* Steppers and inline +/- controls that shrink to 26px on the desktop grid. */
+  .inline-editor button,
+  .condition-chip button,
+  .random-count-control button,
+  .add-mode-count button,
+  .critical-injury-card header button { min-height: 38px; }
+  .add-mode-count input { min-height: 38px; }
+
+  /* Hover-only affordances never resolve on touch, so the cues they reveal are
+     shown unconditionally instead. */
+  .statblock-card-add, .roster-card:hover .statblock-card-add { color: var(--acid); }
+}
+
+/*
+ * The N/P/D/U legend advertises keys a touch-only device has no way to press,
+ * and it was crowding the event message it shares a line with. `any-hover: none`
+ * keeps it for anyone who has a keyboard and pointer attached to a touchscreen.
+ */
+@media (pointer: coarse) and (any-hover: none) {
+  .shortcut-hints { display: none; }
+}
+
+/* ---------- Mobile viewport units and safe areas ---------- */
+/*
+ * `100vh` on a mobile browser measures the viewport with the URL bar retracted,
+ * so a full-height overlay ends up taller than the visible area and its footer
+ * (Done, Apply damage) sits under the browser chrome. `dvh` tracks the chrome as
+ * it hides and shows. Kept in @supports so the vh fallback above still stands.
+ */
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
+  .shell { min-height: 100dvh; }
+  .detail-drawer { height: 100dvh; }
+  .add-drawer { max-height: 100dvh; }
+  .damage-dialog, .attack-resolver-dialog, .range-reference-dialog { max-height: calc(100dvh - 36px); }
+}
+
+/*
+ * Overlays are positioned against the layout viewport, so they paint under the
+ * notch and the home indicator without their own insets.
+ */
+@supports (padding: max(0px)) {
+  .add-drawer-footer { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .drawer-body { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .damage-dialog > footer, .attack-resolver-dialog > footer { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .encounter-modal-backdrop { padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1540px) {
@@ -1827,8 +2125,55 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .skill-groups { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .attack-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .encounter-workspace.has-inspector { grid-template-columns: minmax(0,1fr); }
-  .combatant-inspector { position: relative; top: auto; max-height: none; }
-  .inspector-scroll { max-height: none; }
+  /*
+   * Stacked, the inspector became a ~4000px block appended below the turn order:
+   * selecting a combatant produced no visible change and the page grew to five
+   * screens. It becomes a bottom sheet instead — anchored to the viewport, so it
+   * appears immediately over the table wherever the GM has scrolled to, and the
+   * turn order behind it keeps its scroll position.
+   */
+  .combatant-inspector {
+    position: fixed;
+    z-index: 160;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    max-height: 82vh;
+    flex-direction: column;
+    border-top: 3px solid var(--side-color);
+    border-left: 0;
+    box-shadow: 0 -18px 48px rgba(0, 0, 0, .62);
+    animation: inspector-sheet-in .18s ease-out;
+  }
+  @supports (max-height: 82dvh) {
+    .combatant-inspector { max-height: 82dvh; }
+  }
+  @keyframes inspector-sheet-in { from { transform: translateY(14px); opacity: .5; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .combatant-inspector { animation: none; } }
+  /* Sits directly under the sheet and above the topbar (90). */
+  .inspector-backdrop {
+    position: fixed;
+    z-index: 155;
+    inset: 0;
+    display: block;
+    background: rgba(0, 0, 0, .55);
+    backdrop-filter: blur(2px);
+  }
+  /* The add-combatants drawer's base 150 would fall behind the sheet (160); it is
+     raised so a flow opened from the sheet still paints over it. The damage and
+     attack modals already sit at 300. */
+  .add-drawer-backdrop { z-index: 170; }
+  /* The header stays put while the stat block scrolls under it, so the name and
+     the close button remain reachable without scrolling back up. */
+  .inspector-header { flex: 0 0 auto; }
+  .inspector-scroll {
+    max-height: none;
+    flex: 1 1 auto;
+    overscroll-behavior: contain;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
   .random-skill-groups { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 1120px) {
@@ -1837,6 +2182,16 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .primary-nav { grid-column: 1 / -1; grid-row: 2; }
   .controls { position: relative; top: auto; max-height: none; }
   .layout { grid-template-columns: 1fr; }
+  /*
+   * Stacked, the tall options panel would bury the generated NPC roughly a
+   * screen and a half down, so tapping Generate read as "nothing happened".
+   * The result takes the top slot and the form follows it; on a phone the form
+   * is something you set once, while the operative is what you keep coming back
+   * to. `order` alone does this — the DOM order stays correct for screen readers
+   * and for the desktop two-column layout.
+   */
+  .layout > .workspace { order: 1; }
+  .layout > .controls { order: 2; }
   .field-grid { grid-template-columns: repeat(4,1fr); }
   .field-grid .wide { grid-column: span 2; }
   .toggles { grid-template-columns: repeat(4,1fr); }
@@ -1869,7 +2224,10 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .combatant-row > .row-attacks,
   .combatant-row > .no-attacks { grid-area: attacks; }
   .combatant-row > .row-actions { grid-area: actions; }
-  .density-compact .combatant-row,
+  /* Compact density hides the HP sub-label on the desktop grid; the stacked card
+     has room for it again. `.combatant-row` must keep `display: grid` here — it
+     is the stacked layout's own grid, and blocking it dropped every cell onto
+     its own full-width line. */
   .density-compact .hp-meter small { display: block; }
   .random-encounter-controls { grid-template-columns: 100px 160px minmax(200px,1fr) auto; }
   .random-guidance-toggle { grid-column: 1 / -2; }
@@ -1879,16 +2237,59 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 }
 @media (max-width: 820px) {
   body { font-size: 14px; }
-  .topbar { grid-template-columns: auto 1fr; }
+  /*
+   * The theme trigger used to wrap onto a third row of its own, spending a whole
+   * 34px band of a phone topbar on one small button. It moves up beside the
+   * brand, which has spare width once the tagline and engine state are dropped.
+   */
+  .topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
   .engine-state { display: none; }
   .brand-copy h1 { font-size: 1.3rem; }
-  .primary-nav { grid-template-columns: repeat(4, minmax(92px,1fr)); overflow-x: auto; }
+  .topbar-utilities { grid-column: 3; grid-row: 1; justify-self: end; }
+  /*
+   * A 268px menu anchored to the right edge of a trigger that sits near the left
+   * edge of a 375px screen resolved to `left: -177px` — the whole panel, names
+   * and swatches included, was off-screen. On phones it detaches from the trigger
+   * and pins to the viewport instead, so it cannot overhang either edge whatever
+   * the trigger's position or the theme name's length.
+   */
+  .theme-picker { position: static; }
+  .theme-menu {
+    top: auto;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* All four destinations must be reachable without a horizontal swipe, so the
+     columns shrink to fit rather than overflowing a scroller whose last tab was
+     permanently half-hidden. */
+  .primary-nav { grid-template-columns: repeat(4, minmax(0,1fr)); overflow-x: visible; }
   .nav-key { display: none; }
+  .primary-nav button { min-height: 46px; padding: 7px 4px; }
   .field-grid, .toggles { grid-template-columns: 1fr 1fr; }
   .field-grid .wide { grid-column: 1 / -1; }
+  /* The placeholder must not push the generator form below the fold on the
+     first visit, so it shrinks to a banner once the layout is stacked. */
+  .empty { min-height: 0; padding: 26px 18px; }
+  .empty-glyph { font-size: clamp(2.6rem, 16vw, 4.4rem); }
+  .empty h2 { margin: 10px 0 5px; font-size: var(--fs-lg); }
   .hero { padding: 18px; }
-  .hero-copy { padding-right: 0; }
-  .hero-actions { position: relative; top: auto; right: auto; margin-top: 13px; }
+  /*
+   * The description is `pre-wrap`, so its longest line set the width of an
+   * auto-sized grid column and pushed the chips and hero actions past the
+   * panel's `overflow: hidden` edge, where they could not be reached at all.
+   * Grid items default to `min-width: auto`; these have to be told they may
+   * shrink, and the long profile text wraps instead.
+   */
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .hero-copy { min-width: 0; padding-right: 0; }
+  .hero .description, .description { white-space: pre-wrap; overflow-wrap: anywhere; }
+  /* Five export/save actions cannot sit on one phone-width line; wrapping keeps
+     every one of them tappable instead of clipping the last two. */
+  .hero-actions { position: relative; top: auto; right: auto; flex-wrap: wrap; margin-top: 13px; }
   .hero::after { display: none; }
   .overview-grid, .edit-grid, .reference-hero, .range-reference-two-column { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(5,minmax(56px,1fr)); overflow-x: auto; }
@@ -1922,29 +2323,94 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
   .shell { padding: 6px; }
   .topbar { gap: 8px; padding: 8px; }
   .brand-mark { width: 40px; height: 40px; }
-  .primary-nav button { padding: 6px; font-size: .66rem; }
+  .primary-nav button { padding: 6px 2px; font-size: .62rem; letter-spacing: 0; }
+  /*
+   * On a phone the DV grid is always going to pan sideways — eight range bands
+   * do not fit. Tighten the cells so more bands land in view per pan, and give
+   * the pinned weapon column less of the width it was eating.
+   */
+  .range-table-scroll { max-height: min(58vh, 400px); }
+  .range-dv-table { min-width: 460px; }
+  .range-dv-table th, .range-dv-table td { padding: 8px 7px; }
+  .range-dv-table th:first-child, .range-dv-table td:first-child { min-width: 116px; }
   .field-grid, .toggles, .inline-editor > div, .inspector-vitals, .inspector-skill-list { grid-template-columns: 1fr; }
   .tabs button { padding-inline: 10px; }
   .tab-content { padding: 9px; }
   .reference-hero, .random-result-copy { padding: 13px; }
   .encounter-command { grid-template-columns: 1fr; }
-  /* Phone width: drop to two columns and let the attack pair stack. */
+  /*
+   * One card per row means the desktop min-height only pads short entries with
+   * dead space — roughly three fit a phone screen instead of six. Cards size to
+   * their own content here, and the footer no longer needs pushing down.
+   */
+  .reference-card, .library-card { min-height: 0; }
+  .reference-card > p { margin-bottom: 7px; }
+  .reference-card > footer { margin-top: 7px; }
+  /*
+   * Phone width: drop to two columns and let the attack pair stack.
+   *
+   * Height is the scarce resource here — a GM scrolling a six-combatant fight on
+   * a phone needs more than one row per screen, and the stretched number inputs
+   * were spending ~480px on each. Initiative shares the name's line, and the
+   * numeric fields are capped near their content width below.
+   */
   .combatant-row {
-    grid-template-columns: 26px minmax(0,1fr);
+    grid-template-columns: 26px minmax(0,1fr) 62px;
     grid-template-areas:
-      "marker name"
-      "init hp"
-      "armor armor"
-      "status status"
-      "attacks attacks"
-      "actions actions";
+      "marker name init"
+      "hp     hp   hp"
+      "armor  armor armor"
+      "status status status"
+      "attacks attacks attacks"
+      "actions actions actions";
+    gap: 6px 7px;
   }
-  .combatant-row > .row-actions { grid-template-columns: 1fr 1fr 34px; grid-template-areas: "damage statblock remove"; }
+  .combatant-row > .initiative-cell { align-self: center; }
+  /* Initiative is the one number read aloud every turn, so it keeps a full-size
+     field. The "base +N" note is dropped to save a line, but an INIT caption
+     stays: unlabelled, the empty field read as a stray input. */
+  .combatant-row > .initiative-cell .compact-number { min-height: 40px; }
+  .combatant-row > .initiative-cell small { display: none; }
+  .combatant-row > .initiative-cell::before {
+    content: "INIT";
+    color: var(--muted-2);
+    text-align: center;
+    letter-spacing: .08em;
+    font-size: .58rem;
+  }
+  /*
+   * The ACTIVE/NEXT corner flag overlapped the initiative field at top-right and
+   * the Damage button at bottom-right. It becomes the INIT caption instead, so
+   * turn state is stated once, in the cell it describes.
+   */
+  .combatant-row.active-turn::after,
+  .combatant-row.on-deck::after { content: none; }
+  .combatant-row.active-turn > .initiative-cell::before { content: "ACTIVE"; color: var(--acid); }
+  .combatant-row.on-deck > .initiative-cell::before { content: "NEXT"; color: var(--cyan); }
+  /* HP is edited by typing a new current value, not by stretching the field
+     across the card; both boxes sit at a thumb-friendly but bounded size. */
+  .combatant-row > .hp-meter .hp-meter-values { grid-template-columns: 82px auto 82px; justify-content: start; }
+  .combatant-row > .hp-meter .compact-number { min-height: 40px; }
+  .combatant-row > .armor-cell { grid-template-columns: repeat(2, minmax(0, 116px)); }
+  .combatant-row > .armor-cell .compact-number { min-height: 40px; }
+  /* Damage is the most-tapped control in a fight and gets a 44px target; Remove
+     stays an icon but widens enough to hit without zooming. */
+  .combatant-row > .row-actions { grid-template-columns: 1fr 1fr 44px; grid-template-areas: "damage statblock remove"; gap: 5px; }
+  .combatant-row > .row-actions button { min-height: 44px; font-size: var(--fs-2xs); }
   .combatant-row > .row-actions .damage-button { grid-area: damage; }
   .combatant-row > .row-actions .statblock-button { grid-area: statblock; }
   .combatant-row > .row-actions .remove-combatant-button { grid-area: remove; grid-row: auto; }
   .combatant-row > .row-attacks { grid-template-columns: 1fr; }
-  .combatant-row > .hp-meter .hp-meter-values { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
+  /*
+   * Each weapon was spending three stacked lines (name, range chip, roll pair) —
+   * two weapons alone filled a quarter of the screen. The name and the Range·DV
+   * chip share a line instead, since the chip is a fixed-width control and the
+   * name can ellipsize. ROF/AF stay hidden as tooltip-only reference detail.
+   */
+  .attack-control.compact .attack-control-heading { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; align-items: center; }
+  .attack-control.compact .attack-control-facts { flex-wrap: nowrap; }
+  .attack-control.compact .attack-control-facts > span { display: none; }
+  .attack-control.compact .range-dv-chip { width: auto; min-width: 118px; }
   .encounter-turn-command { align-items: stretch; flex-direction: column; width: 100%; }
   .round-display { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 8px; border-right: 0; border-bottom: 1px solid var(--line); text-align: left; }
   .round-display strong { font-size: 1.4rem; }
@@ -1964,20 +2430,183 @@ kbd { padding: 1px 4px; border: 1px solid var(--line-strong); border-bottom-widt
 }
 
 /* ---------- Print ---------- */
+
+/*
+ * The print sheet is a separate document, not a restyled screen. `.print-sheet`
+ * is rendered but hidden on screen; printing hides the entire interactive shell
+ * and reveals it. That inversion is what lets the sheet carry every section at
+ * once (stats, attacks, armor, skills, cyberware, gear) instead of only the tab
+ * that happened to be open, and it means print rules never fight screen layout.
+ */
+.print-sheet { display: none; }
+
 @media print {
-  :root { color-scheme: light; color: #111; background: #fff; }
-  body, .shell { background: #fff !important; color: #111 !important; }
-  body::before, body::after, .topbar, .controls, .tabs, .hero-actions, .app-footer, .drawer-backdrop { display: none !important; }
-  .shell { width: 100%; padding: 0; }
-  .layout, .workspace { display: block; margin: 0; }
-  .result, .panel, .card, .combat-section, .attack-card { box-shadow: none !important; background: #fff !important; border-color: #aaa !important; color: #111 !important; }
-  .panel::before, .panel::after { display: none !important; }
-  .hero { min-height: 0; padding: 0 0 14px; background: none !important; }
-  .hero h2, .hero p, .chips span, .card h3, .stat strong, .metrics strong { color: #111 !important; }
-  .chips span { border-color: #aaa; background: #fff; }
-  .tab-content { display: none !important; }
-  .tab-content.overview-grid { display: grid !important; padding: 0; }
-  .result > .overview-grid { display: grid !important; }
+  @page { margin: 12mm 10mm; }
+
+  /* Ink economy and legibility beat brand: the neon-on-black TUI would print as
+     a solid black rectangle, so paper gets plain black on white. */
+  :root { color-scheme: light; }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10pt;
+  }
+  body::before, body::after { display: none !important; }
+
+  /*
+   * Reveal only the sheet, without hardcoding the DOM path to it.
+   *
+   * An earlier version walked the tree level by level (`body > *`, `.shell > *`,
+   * …). That silently printed a blank page as soon as the real structure did not
+   * match — the app mounts inside a `#app` wrapper, which the walk did not know
+   * about, so the very first rule hid everything.
+   *
+   * Instead: hide every element, then re-show the sheet, its subtree, and only
+   * those ancestors that actually contain it. `:has()` resolves the chain at
+   * print time, so any wrapper added later is handled automatically.
+   */
+  /* Hide every element that is neither an ancestor of the sheet nor inside it.
+     The sheet's own descendants are excluded so their layout (the flex header,
+     the vitals grid, the damage-box row) is left entirely to the rules below. */
+  body *:not(:has(.print-sheet)):not(.print-sheet):not(.print-sheet *) { display: none !important; }
+  /* The ancestor chain becomes a plain, unstyled wrapper around the sheet. */
+  body :has(.print-sheet) {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+  /* Decorative pseudo-elements on the ancestor chain would still paint. */
+  body *:not(.print-sheet):not(.print-sheet *)::before,
+  body *:not(.print-sheet):not(.print-sheet *)::after { display: none !important; }
+
+  .print-sheet {
+    display: block !important;
+    color: #000;
+    font-family: var(--font-body, system-ui), sans-serif;
+  }
+
+  /* Identity header. The name is the thing you find the sheet by in a stack of
+     paper, so it gets the only large type on the page. */
+  .print-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12mm;
+    align-items: flex-start;
+    padding-bottom: 2mm;
+    border-bottom: 1.5pt solid #000;
+  }
+  /* Long generated names (three or four parts is common) must not push into the
+     bio block, so the identity column may shrink and the name wraps inside it. */
+  .print-identity { min-width: 0; }
+  .print-identity h1 {
+    margin: 0;
+    text-transform: uppercase;
+    font: 800 18pt/1.06 var(--font-display, system-ui), sans-serif;
+    letter-spacing: .01em;
+    text-wrap: balance;
+  }
+  .print-role { margin: 1mm 0 0; font-size: 10pt; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  /* The bio is a fixed reference block; it keeps its width so the labels never
+     wrap mid-phrase ("Trauma / Team") when the name grows. */
+  .print-bio { display: grid; flex: 0 0 auto; grid-template-columns: repeat(3, auto); gap: 1mm 6mm; margin: 0; text-align: right; }
+  .print-bio div { display: flex; gap: 2mm; justify-content: flex-end; }
+  .print-bio dt { color: #555; white-space: nowrap; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .05em; }
+  .print-bio dd { margin: 0; font-size: 8pt; font-weight: 700; }
+  .print-description { margin: 3mm 0 0; font-size: 9pt; line-height: 1.45; white-space: pre-wrap; }
+
+  /*
+   * Pagination: keep a block whole only when splitting it would actually hurt.
+   *
+   * Applying `break-inside: avoid` to every section wasted most of a page — a
+   * long skills list that cannot split gets pushed to the next page entirely,
+   * leaving the previous one a third empty. So the default is to flow, and only
+   * the blocks that are unreadable when split (tables, whose header would be
+   * stranded) are kept together. A heading never sits alone at a page foot.
+   */
+  .print-block { margin-top: 4mm; }
+  .print-block:has(.print-table) { break-inside: avoid; page-break-inside: avoid; }
+  .print-block > h2 { break-after: avoid; page-break-after: avoid; }
+  .print-block > h2 {
+    margin: 0 0 1.5mm;
+    padding-bottom: .8mm;
+    border-bottom: .75pt solid #000;
+    text-transform: uppercase;
+    font: 800 9pt/1 var(--font-display, system-ui), sans-serif;
+    letter-spacing: .1em;
+  }
+  .print-empty { margin: 0; color: #555; font-size: 9pt; font-style: italic; }
+
+  .print-vital-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; }
+  .print-vital-row > div { padding: 1.5mm 2mm; border: .75pt solid #000; text-align: center; }
+  .print-vital-row span { display: block; color: #444; font-size: 7pt; text-transform: uppercase; letter-spacing: .05em; }
+  .print-vital-row strong { display: block; margin-top: .5mm; font-size: 14pt; }
+
+  /* Ticked off with a pen as damage lands; the sheet is meant to be written on. */
+  .print-damage-track { display: flex; gap: 2mm; align-items: flex-start; margin-top: 2mm; }
+  .print-damage-track > span { flex: 0 0 auto; padding-top: .8mm; color: #444; font-size: 7pt; text-transform: uppercase; letter-spacing: .05em; }
+  /*
+   * A fixed column count rather than wrapping flex: HP varies per NPC, and a
+   * flex row leaves whatever does not divide evenly stranded on a second line
+   * (40 HP wrapped a single box). A 20-column grid always yields whole rows and
+   * makes the track countable in tens.
+   */
+  .print-boxes { display: grid; flex: 1 1 auto; grid-template-columns: repeat(20, 1fr); gap: 1mm; max-width: 92mm; }
+  .print-boxes i { aspect-ratio: 1; border: .75pt solid #444; }
+  /* Crossing Seriously Wounded changes what the NPC can do, so the box at that
+     point carries a heavy left edge — the GM sees the line coming while
+     ticking, instead of having to count back from the total. */
+  .print-boxes i.print-box-threshold { border-left: 1.5pt solid #000; }
+
+  .print-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  .print-table th, .print-table td { padding: 1.2mm 2mm; border: .75pt solid #999; text-align: center; }
+  .print-table thead th {
+    background: #eee !important;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-table tbody th { text-align: left; font-weight: 700; }
+  .print-table tbody th small { display: block; color: #555; font-size: 7pt; font-weight: 400; }
+  .print-stat-table td { font-size: 13pt; font-weight: 700; }
+
+  /* Two columns of skills fit the common case on one page without spilling. */
+  .print-skill-list, .print-list { margin: 0; padding: 0; list-style: none; font-size: 9pt; }
+  .print-skill-list { columns: 3; column-gap: 6mm; }
+  .print-skill-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 3mm;
+    padding: .6mm 0;
+    border-bottom: .5pt dotted #bbb;
+    break-inside: avoid;
+  }
+  .print-skill-list strong { font-variant-numeric: tabular-nums; }
+  .print-list { columns: 2; column-gap: 6mm; }
+  .print-list li { padding: .6mm 0; break-inside: avoid; }
+  /* The cyberware tree reads top-to-bottom: a child sits under its parent, so
+     splitting it into balanced columns would put a limb in one column and the
+     thing installed in it in another. Single column keeps the nesting true. */
+  .print-cyberware-list { columns: 1; }
+
+  .print-foot {
+    margin-top: 5mm;
+    padding-top: 1.5mm;
+    border-top: .5pt solid #999;
+    color: #555;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
 }
 
 /* Small utility stacks used inside the inspector. */

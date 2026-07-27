@@ -8,9 +8,11 @@ import { ReferenceBrowser } from './components/ReferenceBrowser';
 import { NpcLibrary } from './components/NpcLibrary';
 import { EncounterTracker } from './components/EncounterTracker';
 import { getAllTags } from './engine/domain';
-import { createMarkdownExport, createNativeExport } from './engine/export';
+import { createMarkdownExport, createNativeExport, parseNativeExport } from './engine/export';
+import { addNpcToActiveEncounter, loadEncounterWorkspace, persistEncounterWorkspace } from './encounter/storage';
 import type {
   GenerateOptions,
+  GenerationRules,
   NpcCommand,
   NpcSection,
   GeneratedNpcView,
@@ -19,7 +21,7 @@ import type {
   SkillType,
 } from './engine/types';
 import { DEFAULT_OPTIONS, DEFAULT_RULES, SKILL_TYPES } from './engine/types';
-import { deleteSavedNpc, listSavedNpcs, saveNpc, type SavedNpcRecord } from './storage';
+import { deleteSavedNpc, listSavedNpcs, normalizeSavedNpcView, saveNpc, type SavedNpcRecord } from './storage';
 import { applyTheme, loadTheme, THEMES, type ThemeId } from './theme';
 
 interface Meta {
@@ -52,7 +54,7 @@ const REROLL_SECTIONS: Array<{ section: NpcSection; title: string; description: 
   { section: 'loadout', title: 'Full loadout', description: 'Replace cyberware, armor, weapons, inventory, and Trauma Team status.' },
 ];
 
-const RULE_LABELS: Array<[keyof typeof DEFAULT_RULES, string]> = [
+const RULE_LABELS: Array<[Exclude<keyof GenerationRules, 'forbidden_skills' | 'allow_description'>, string]> = [
   ['allow_non_basic_ammo', 'Special ammo'],
   ['allow_grenades', 'Grenades'],
   ['allow_armor', 'Armor'],
@@ -65,6 +67,7 @@ const RULE_LABELS: Array<[keyof typeof DEFAULT_RULES, string]> = [
   ['allow_melee_weapon', 'Melee weapons'],
   ['allow_ranged_weapon', 'Ranged weapons'],
   ['allow_martial_arts', 'Martial arts'],
+  ['allow_lifepath', 'Lifepath'],
 ];
 
 const TABS = ['overview', 'combat', 'skills', 'cyberware', 'gear', 'refine', 'validation', 'text', 'exports'] as const;
@@ -157,6 +160,157 @@ function CyberwareNode({
   );
 }
 
+/**
+ * Print sheet.
+ *
+ * The screen UI hides most of the NPC behind tabs, which is wrong for paper:
+ * a GM at the table wants stats, combat, skills, gear, and cyberware all
+ * visible at once. So printing renders this dedicated block rather than
+ * whichever tab happened to be open, and the screen tabs are hidden in
+ * `@media print`. Everything here is static — no buttons, no drawers, no
+ * "open reference" affordances that mean nothing on paper.
+ */
+function PrintSheet({ view }: { view: GeneratedNpcView }) {
+  const trainedSkills = view.skills
+    .filter((skill) => skill.base > 0)
+    .sort((left, right) => right.total - left.total || left.name.localeCompare(right.name));
+  const inventory = [...view.npc.inventory.values()];
+  const cyberware = flattenCyberware(view.npc.cyberware.children);
+
+  return (
+    <section class="print-sheet" aria-hidden="true">
+      <header class="print-head">
+        <div class="print-identity">
+          <h1>{view.npc.name} {view.npc.surname}</h1>
+          <p class="print-role">{pretty(view.rank.name)} · {pretty(view.role.name)}</p>
+        </div>
+        <dl class="print-bio">
+          <div><dt>Sex</dt><dd>{view.npc.sex ? 'Male' : 'Female'}</dd></div>
+          <div><dt>Age</dt><dd>{view.npc.age}</dd></div>
+          <div><dt>Nationality</dt><dd>{view.npc.nationality}</dd></div>
+          <div><dt>Trauma Team</dt><dd>{view.npc.traumaTeamStatus}</dd></div>
+          <div><dt>Loadout</dt><dd>{view.totalPrice}eb</dd></div>
+          <div><dt>Seed</dt><dd>{view.seed}</dd></div>
+        </dl>
+      </header>
+
+      {view.profileSummary && <p class="print-description">{view.profileSummary}</p>}
+
+      <section class="print-block print-vitals">
+        <h2>Vitals</h2>
+        <div class="print-vital-row">
+          <div><span>HP</span><strong>{view.combat.hitPoints}</strong></div>
+          <div><span>Seriously Wounded</span><strong>{view.combat.seriouslyWounded ?? '—'}</strong></div>
+          <div><span>Death Save</span><strong>{view.combat.deathSave}</strong></div>
+          <div><span>Initiative</span><strong>+{view.combat.initiative}</strong></div>
+        </div>
+        {/* Damage tracking is the one thing a paper sheet must support that the
+            screen does not: an empty grid to tick off HP as it comes off. One
+            box per point of this NPC's actual HP, so the row is a true track
+            rather than a fixed-length decoration. The Seriously Wounded
+            threshold is marked because crossing it changes how the NPC acts. */}
+        <div class="print-damage-track">
+          <span>Damage</span>
+          <div class="print-boxes">{Array.from({ length: view.combat.hitPoints }, (_, index) => (
+            <i key={index} class={index + 1 === view.combat.seriouslyWounded ? 'print-box-threshold' : undefined} />
+          ))}</div>
+        </div>
+      </section>
+
+      <section class="print-block">
+        <h2>Stats</h2>
+        <table class="print-table print-stat-table">
+          <thead><tr>{view.stats.map((stat) => <th key={stat.name} scope="col">{stat.name}</th>)}</tr></thead>
+          <tbody><tr>{view.stats.map((stat) => <td key={stat.name}>{stat.total}</td>)}</tr></tbody>
+        </table>
+      </section>
+
+      <section class="print-block">
+        <h2>Attacks</h2>
+        {view.combat.attacks.length ? (
+          <table class="print-table">
+            <thead><tr><th scope="col">Weapon</th><th scope="col">Attack</th><th scope="col">Autofire</th><th scope="col">Damage</th><th scope="col">ROF</th><th scope="col">Mag</th></tr></thead>
+            <tbody>{view.combat.attacks.map((attack) => (
+              <tr key={attack.name}>
+                <th scope="row">{attack.name}<small>{attack.skill ?? 'Unmapped'}</small></th>
+                <td>{attack.attackBase ?? '—'}</td>
+                <td>{attack.autofireBase ?? '—'}</td>
+                <td>{attack.damage ?? '—'}</td>
+                <td>{attack.rateOfFire ?? '—'}</td>
+                <td>{attack.magazine ?? '—'}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        ) : <p class="print-empty">No attacks.</p>}
+      </section>
+
+      <section class="print-block">
+        <h2>Armor</h2>
+        {view.combat.armor.length ? (
+          <table class="print-table">
+            <thead><tr><th scope="col">Location</th><th scope="col">SP</th></tr></thead>
+            <tbody>{view.combat.armor.map((armor) => (
+              <tr key={armor.name}><th scope="row">{armor.name}</th><td>{armor.stoppingPower ?? '—'}</td></tr>
+            ))}</tbody>
+          </table>
+        ) : <p class="print-empty">No armor equipped.</p>}
+      </section>
+
+      <section class="print-block print-skills">
+        <h2>Trained skills</h2>
+        {trainedSkills.length ? (
+          <ul class="print-skill-list">{trainedSkills.map((skill) => (
+            <li key={skill.name}><span>{skill.name}</span><strong>{skill.total}</strong></li>
+          ))}</ul>
+        ) : <p class="print-empty">No trained skills.</p>}
+      </section>
+
+      {cyberware.length > 0 && (
+        <section class="print-block">
+          <h2>Cyberware</h2>
+          <ul class="print-list print-cyberware-list">{cyberware.map((entry, index) => (
+            <li key={`${entry.name}-${index}`} style={{ paddingLeft: `${entry.depth * 5}mm` }}>{entry.name}</li>
+          ))}</ul>
+        </section>
+      )}
+
+      <section class="print-block print-gear">
+        <h2>Gear</h2>
+        <ul class="print-list">
+          {/* Unarmed/martial-arts strikes are synthesized attack entries, not
+              things the NPC is carrying — they belong in Attacks, not on a
+              packing list. They are the only zero-price weapons. */}
+          {view.npc.weapons.filter((item) => item.price > 0).map((item, index) => <li key={`w-${index}`}>{item.beautiful_name ?? item.name}</li>)}
+          {view.npc.armor.map((item, index) => <li key={`a-${index}`}>{item.beautiful_name ?? item.name}</li>)}
+          {inventory.map((entry, index) => (
+            <li key={`i-${index}`}>{entry.amount > 1 ? `${entry.amount}× ` : ''}{entry.item.beautiful_name ?? entry.item.name}</li>
+          ))}
+        </ul>
+      </section>
+
+      {view.actions.length > 0 && (
+        <section class="print-block"><h2>Actions</h2><ul class="print-list">{view.actions.map((action, index) => <li key={index}>{action}</li>)}</ul></section>
+      )}
+      {view.abilities.length > 0 && (
+        <section class="print-block"><h2>Abilities</h2><ul class="print-list">{view.abilities.map((ability, index) => <li key={index}>{ability}</li>)}</ul></section>
+      )}
+
+      <footer class="print-foot">RED//OPS · {view.npc.name} {view.npc.surname} · seed {view.seed}</footer>
+    </section>
+  );
+}
+
+/** Flattens the cyberware tree to indented rows; paper has no disclosure widgets. */
+function flattenCyberware(nodes: readonly InventoryNode[], depth = 0): Array<{ name: string; depth: number }> {
+  return nodes.flatMap((node) => {
+    if (node.item.default_hidden && node.children.length === 0) return [];
+    return [
+      { name: node.item.beautiful_name ?? node.item.name, depth },
+      ...flattenCyberware(node.children, depth + 1),
+    ];
+  });
+}
+
 function ItemCard({
   item,
   amount,
@@ -179,7 +333,7 @@ function ItemCard({
       onClick={() => reference && onSelect({ entry: reference, reason: reasonFor(view, reference, item.name) })}
     >
       <div class="item-card-title">
-        <strong>{amount !== undefined ? `[${amount}] ` : ''}{item.name}</strong>
+        <strong>{amount !== undefined ? `[${amount}] ` : ''}{item.beautiful_name ?? item.name}</strong>
         {item.price > 0 && <span>{item.price}eb</span>}
       </div>
       <div class="item-facts">
@@ -258,25 +412,54 @@ function ThemePicker({ theme, onChange }: { theme: ThemeId; onChange: (theme: Th
   );
 }
 
-function EmptyState({ busy, status, progress }: { busy: boolean; status: string; progress: number }) {
+function EmptyState({
+  busy,
+  status,
+  progress,
+  onImport,
+}: {
+  busy: boolean;
+  status: string;
+  progress: number;
+  onImport: () => void;
+}) {
+  const pct = Math.round(progress * 100);
   return (
     <div class="empty panel">
       <div class="empty-glyph">R//</div>
-      <h2>{busy ? 'Compiling operative' : 'Generator standing by'}</h2>
+      <h2>{busy ? 'Getting everything ready' : 'Ready to generate'}</h2>
       <p>{status}</p>
-      <div class="progress"><i style={{ width: `${Math.round(progress * 100)}%` }} /></div>
-      <small>{Math.round(progress * 100)}%</small>
+      <div
+        class={busy ? 'progress is-busy' : 'progress'}
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <i style={{ width: `${pct}%` }} />
+      </div>
+      <div class={busy ? 'progress-readout is-busy' : 'progress-readout'}>
+        <b>{pct}%</b>
+        <span>{busy ? 'Establishing CitiNet link' : 'CitiNet link established'}</span>
+      </div>
+      {!busy && <button type="button" onClick={onImport}>Import NPC</button>}
     </div>
   );
 }
 
 export function App() {
   const workerRef = useRef<Worker | null>(null);
+  const resultRef = useRef<HTMLElement | null>(null);
+  const importNpcInput = useRef<HTMLInputElement>(null);
+  // Set when the user asks for a generate/reroll so the finished operative can be
+  // scrolled into view. On a stacked phone layout the result sits below the
+  // options panel, and without this the tap produced no visible change.
+  const scrollToResultRef = useRef(false);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [options, setOptions] = useState<GenerateOptions>(loadSavedOptions);
   const [view, setView] = useState<GeneratedNpcView | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
-  const [status, setStatus] = useState('Loading the pinned upstream catalog…');
+  const [status, setStatus] = useState('Loading game data…');
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(true);
   const [fatal, setFatal] = useState<string | null>(null);
@@ -307,7 +490,7 @@ export function App() {
         setMeta(message.meta);
         setBusy(false);
         setProgress(1);
-        setStatus('TypeScript engine and reference catalog ready.');
+        setStatus('Ready.');
       } else if (message.type === 'generation-progress') {
         setBusy(true);
         setStatus(message.progress.stage);
@@ -357,6 +540,17 @@ export function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  // Reveal a freshly generated operative on the stacked layout, where the result
+  // panel starts off-screen. Above that width the two columns are both visible,
+  // so scrolling would only yank the page out from under the user.
+  useEffect(() => {
+    if (!view || busy || !scrollToResultRef.current) return;
+    scrollToResultRef.current = false;
+    if (page !== 'generator') return;
+    if (!window.matchMedia('(max-width: 1120px)').matches) return;
+    resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [view, busy, page]);
+
   const entries = meta?.referenceEntries ?? [];
   const filteredSkills = useMemo(() => {
     if (!view) return [];
@@ -369,11 +563,12 @@ export function App() {
 
   const generate = () => {
     if (!meta || busy) return;
+    scrollToResultRef.current = true;
     setBusy(true);
     setFatal(null);
     setWarning(null);
     setProgress(0);
-    setStatus('Preparing seeded generator…');
+    setStatus('Generating NPC…');
     workerRef.current?.postMessage({ type: 'generate', options });
   };
 
@@ -386,6 +581,7 @@ export function App() {
     const randomSeed = new Uint32Array(1);
     crypto.getRandomValues(randomSeed);
     const seed = randomSeed[0] || 1;
+    scrollToResultRef.current = true;
     setBusy(true);
     setFatal(null);
     setWarning(null);
@@ -403,14 +599,9 @@ export function App() {
     workerRef.current?.postMessage({ type: 'edit', current: view, command });
   };
 
-  const printNpc = () => {
-    const previousTab = tab;
-    setTab('overview');
-    window.setTimeout(() => {
-      window.print();
-      setTab(previousTab);
-    }, 0);
-  };
+  // The print stylesheet swaps the tabbed screen UI for the always-rendered
+  // <PrintSheet />, so printing no longer has to switch tabs and switch back.
+  const printNpc = () => window.print();
 
   const saveCurrentNpc = async () => {
     if (!view) return;
@@ -442,12 +633,48 @@ export function App() {
     }
   };
 
+  const addCurrentNpcToEncounter = () => {
+    if (!view) return;
+    const workspace = addNpcToActiveEncounter(loadEncounterWorkspace(), view);
+    persistEncounterWorkspace(workspace);
+    const encounter = workspace.encounters.find((candidate) => candidate.id === workspace.activeEncounterId);
+    setStatus(`Added ${view.npc.name} ${view.npc.surname} to ${encounter?.name ?? 'the active encounter'}.`);
+    setPage('encounter');
+  };
+
+  const importNpc = async (event: InputEvent) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const imported = normalizeSavedNpcView(parseNativeExport(await file.text()));
+      setView(imported);
+      setOptions(imported.options);
+      setWarning(null);
+      setFatal(null);
+      setPage('generator');
+      setTab('overview');
+      setStatus(`Imported ${imported.npc.name} ${imported.npc.surname} from ${file.name}.`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'The file could not be read.';
+      window.alert(`Could not import NPC. ${detail}`);
+    }
+  };
+
   const foundryJson = view ? JSON.stringify(view.foundry, null, 2) : '';
   const nativeJson = view ? JSON.stringify(createNativeExport(view), null, 2) : '';
   const markdown = view ? createMarkdownExport(view) : '';
   const filename = view ? `${view.npc.name}-${view.npc.surname}`.replace(/[^a-z0-9-]+/gi, '-').toLowerCase() : 'npc';
   const errorCount = view?.validation.filter((issue) => issue.severity === 'error').length ?? 0;
   const warningCount = view?.validation.filter((issue) => issue.severity === 'warning').length ?? 0;
+  const aiConfigurationIssue = options.allow_description
+    ? !options.model_id
+      ? 'Enter a model ID to generate an AI description.'
+      : !options.model_base_url
+        ? 'Enter an OpenAI-compatible base URL to generate an AI description.'
+        : null
+    : null;
 
   return (
     <main class={`shell page-${page}`}>
@@ -468,7 +695,6 @@ export function App() {
           <div class="engine-state">
             <i class={busy ? 'loading' : fatal ? 'error' : 'ready'} />
             <span>{fatal ? 'ENGINE FAULT' : busy ? 'PROCESSING' : 'ONLINE'}</span>
-            {meta && <small>{meta.commit.slice(0, 8)}</small>}
           </div>
         </div>
       </header>
@@ -491,14 +717,14 @@ export function App() {
                 <label><span>Role</span><select value={options.role} disabled={!meta || busy} onChange={(event: SelectEvent) => update('role', event.currentTarget.value)}>
                   {(meta?.roles ?? [options.role]).map((role) => <option key={role} value={role}>{pretty(role)}</option>)}
                 </select></label>
-                <label class="wide"><span>Nationality / Faker locale</span><select value={options.nationality ?? ''} disabled={!meta || busy} onChange={(event: SelectEvent) => update('nationality', event.currentTarget.value || null)}>
-                  <option value="">Auto · population weighted</option>
+                <label class="wide"><span>Nationality</span><select value={options.nationality ?? ''} disabled={!meta || busy} onChange={(event: SelectEvent) => update('nationality', event.currentTarget.value || null)}>
+                  <option value="">Choose automatically</option>
                   {meta?.nationalities.map((locale) => <option key={locale} value={locale}>{locale}</option>)}
                 </select></label>
-                <label class="wide"><span>Seed · 0 uses current time</span><input type="number" value={options.seed} disabled={busy} onInput={(event: InputEvent) => update('seed', Number(event.currentTarget.value))} /></label>
+                <label class="wide"><span>Seed · 0 for random</span><input type="number" value={options.seed} disabled={busy} onInput={(event: InputEvent) => update('seed', Number(event.currentTarget.value))} /></label>
               </div>
 
-              <div class="rule-heading"><h3>Generation permissions</h3><button type="button" onClick={() => setOptions((current) => ({ ...current, ...DEFAULT_RULES }))}>Reset</button></div>
+              <div class="rule-heading"><h3>Include</h3><button type="button" onClick={() => setOptions((current) => ({ ...current, ...DEFAULT_RULES }))}>Reset</button></div>
               <div class="toggles">
                 {RULE_LABELS.map(([key, label]) => (
                   <label key={key} class="toggle">
@@ -512,22 +738,24 @@ export function App() {
               <details>
                 <summary>AI description · optional</summary>
                 <div class="details-grid">
+                  <label class="toggle standalone"><span>Generate description</span><input type="checkbox" checked={options.allow_description} onChange={(event: InputEvent) => update('allow_description', event.currentTarget.checked)} /><i /></label>
                   <label><span>Model ID</span><input value={options.model_id ?? ''} placeholder="disabled" onInput={(event: InputEvent) => update('model_id', event.currentTarget.value || null)} /></label>
-                  <label><span>API key</span><input type="password" value={options.model_api_key ?? ''} placeholder="not stored" onInput={(event: InputEvent) => update('model_api_key', event.currentTarget.value || null)} /></label>
-                  <label><span>Base URL</span><input value={options.model_base_url ?? ''} placeholder="http://localhost:1234/v1" onInput={(event: InputEvent) => update('model_base_url', event.currentTarget.value || null)} /></label>
+                  <label><span>API key · optional</span><input type="password" value={options.model_api_key ?? ''} placeholder="not stored" onInput={(event: InputEvent) => update('model_api_key', event.currentTarget.value || null)} /></label>
+                  <label><span>Base URL</span><input value={options.model_base_url ?? ''} placeholder="http://localhost:11434/v1" onInput={(event: InputEvent) => update('model_base_url', event.currentTarget.value || null)} /></label>
                   <label><span>Language</span><input value={options.model_language} onInput={(event: InputEvent) => update('model_language', event.currentTarget.value)} /></label>
                 </div>
-                <p>Requests go directly from the browser. API keys are kept only in memory and are not stored locally.</p>
+                {aiConfigurationIssue && <p class="warning">{aiConfigurationIssue}</p>}
+                <p>Requests go directly from the browser. For Ollama, use <code>http://localhost:11434/v1</code>; no API key is needed. API keys are kept only in memory and are not stored locally.</p>
               </details>
 
-              <label class="toggle standalone"><span>Flat exact-text layout</span><input type="checkbox" checked={options.flat} onChange={(event: InputEvent) => update('flat', event.currentTarget.checked)} /><i /></label>
+              <label class="toggle standalone"><span>Simplified text layout</span><input type="checkbox" checked={options.flat} onChange={(event: InputEvent) => update('flat', event.currentTarget.checked)} /><i /></label>
               <button class="generate" type="button" disabled={!meta || busy} onClick={generate}>{busy ? 'Fabricating…' : 'Generate NPC'}</button>
             </div>
           </aside>
 
-          <section class="workspace">
+          <section class="workspace" ref={resultRef}>
             {fatal && <div class="fatal panel"><strong>Engine fault</strong><pre>{fatal}</pre></div>}
-            {!view && !fatal && <EmptyState busy={busy} status={status} progress={progress} />}
+            {!view && !fatal && <EmptyState busy={busy} status={status} progress={progress} onImport={() => importNpcInput.current?.click()} />}
             {view && (
               <div class="result panel">
                 <section class="hero">
@@ -542,17 +770,18 @@ export function App() {
                     {warning && <p class="warning">{warning}</p>}
                   </div>
                   <div class="hero-actions">
-                    <button class="primary-action" onClick={() => setPage('encounter')}>Use in encounter</button>
+                    <button class="primary-action" onClick={addCurrentNpcToEncounter}>Add to encounter</button>
                     <button onClick={() => void saveCurrentNpc()}>Save</button>
-                    <button onClick={printNpc}>Print</button>
-                    <button onClick={() => copyText(view.command)}>Copy command</button>
-                    <button onClick={() => download(`${filename}.json`, nativeJson, 'application/json')}>Native JSON</button>
+                    <button onClick={() => setTab('exports')}>Export</button>
+                    <button onClick={() => importNpcInput.current?.click()}>Import</button>
                   </div>
                 </section>
 
                 <nav class="tabs">
                   {TABS.map((name) => <button key={name} class={tab === name ? 'active' : ''} onClick={() => setTab(name)}>{pretty(name)}</button>)}
                 </nav>
+
+                <PrintSheet view={view} />
 
                 {tab === 'overview' && <section class="tab-content overview-grid">
                   <article class="card wide"><header><h3>Stats</h3><span>base + modifiers</span></header><div class="stats-grid">
@@ -565,9 +794,9 @@ export function App() {
                   </div></article>
                   <article class="card"><header><h3>Character check</h3><span>{errorCount ? `${errorCount} errors` : warningCount ? `${warningCount} warnings` : 'valid'}</span></header>
                     <div class={`validation-summary ${errorCount ? 'has-errors' : warningCount ? 'has-warnings' : 'valid'}`}>
-                      <strong>{errorCount ? 'Needs correction' : warningCount ? 'Review suggested' : 'No mechanical issues detected'}</strong>
-                      <p>{view.validation[0]?.message ?? 'Weapons, ammunition, cyberware capacity, skills, and catalog mappings passed the current checks.'}</p>
-                      <button type="button" onClick={() => setTab('validation')}>Open validation</button>
+                      <strong>{errorCount ? 'Needs correction' : warningCount ? 'Review suggested' : 'Ready to use'}</strong>
+                      <p>{view.validation[0]?.message ?? 'This NPC is ready for your game.'}</p>
+                      <button type="button" onClick={() => setTab('validation')}>View checks</button>
                     </div>
                   </article>
                   <article class="card"><header><h3>Conditions</h3></header><div class="conditions">
@@ -623,8 +852,8 @@ export function App() {
 
                 {tab === 'refine' && <section class="tab-content refine-layout">
                   <header class="refine-header">
-                    <div><span class="kicker">Non-destructive iteration</span><h3>Refine this operative</h3><p>Each partial reroll keeps every other section locked. A new seed is recorded so native exports retain an audit trail.</p></div>
-                    <span>{view.revisions.length} revisions</span>
+                    <div><span class="kicker">Make changes</span><h3>Refine this operative</h3><p>Reroll one section without changing the rest of the NPC.</p></div>
+                    <span>{view.revisions.length} changes</span>
                   </header>
                   <div class="reroll-grid">
                     {REROLL_SECTIONS.map(({ section, title, description }) => <article key={section}>
@@ -632,32 +861,32 @@ export function App() {
                     </article>)}
                   </div>
                   <div class="edit-grid">
-                    <article class="inline-editor"><h3>Base stats</h3><p>Manual changes are clamped to 1–10. Cyberware modifiers remain separate.</p><div>
+                    <article class="inline-editor"><h3>Base stats</h3><p>Adjust each base stat from 1 to 10.</p><div>
                       {view.stats.map((stat) => <div key={stat.name}><span>{stat.name}</span><button type="button" disabled={busy || stat.base <= 1} onClick={() => editNpc({ type: 'set-stat', stat: stat.name, value: stat.base - 1 })}>−</button><strong>{stat.base}</strong><button type="button" disabled={busy || stat.base >= 10} onClick={() => editNpc({ type: 'set-stat', stat: stat.name, value: stat.base + 1 })}>+</button></div>)}
                     </div></article>
-                    <article class="inline-editor"><h3>Trained skills</h3><p>Adjust the highest trained skills. Validation immediately rechecks weapon compatibility.</p><div>
+                    <article class="inline-editor"><h3>Trained skills</h3><p>Adjust the NPC's highest trained skills.</p><div>
                       {[...view.skills].sort((left, right) => right.base - left.base || left.name.localeCompare(right.name)).filter((skill) => skill.base > 0).slice(0, 20).map((skill) => {
                         const trainedLevel = view.npc.skills.get(skill.name)?.level ?? 0;
                         return <div key={skill.name}><span>{skill.name}</span><button type="button" disabled={busy || trainedLevel <= 0} onClick={() => editNpc({ type: 'set-skill', skill: skill.name, value: trainedLevel - 1 })}>−</button><strong>{trainedLevel}</strong><button type="button" disabled={busy || trainedLevel >= 10} onClick={() => editNpc({ type: 'set-skill', skill: skill.name, value: trainedLevel + 1 })}>+</button></div>;
                       })}
                     </div></article>
                   </div>
-                  <article class="revision-log"><h3>Revision history</h3>{view.revisions.length ? <ol>{[...view.revisions].reverse().map((revision, index) => <li key={`${revision.createdAt}-${index}`}><strong>{pretty(revision.section)}</strong><span>{revision.seed !== undefined ? `seed ${revision.seed}` : revision.command}</span><time>{new Date(revision.createdAt).toLocaleString()}</time></li>)}</ol> : <p>No partial rerolls or manual edits yet.</p>}</article>
+                  <article class="revision-log"><h3>Change history</h3>{view.revisions.length ? <ol>{[...view.revisions].reverse().map((revision, index) => <li key={`${revision.createdAt}-${index}`}><strong>{pretty(revision.section)}</strong><span>{revision.seed !== undefined ? `variation ${revision.seed}` : revision.command}</span><time>{new Date(revision.createdAt).toLocaleString()}</time></li>)}</ol> : <p>No rerolls or manual changes yet.</p>}</article>
                 </section>}
 
                 {tab === 'validation' && <section class="tab-content validation-panel">
-                  <header><div><span class="kicker">Post-generation integrity checks</span><h3>Character validation</h3></div><div class="validation-counts"><span>{errorCount} errors</span><span>{warningCount} warnings</span><span>{view.validation.filter((issue) => issue.severity === 'info').length} notes</span></div></header>
-                  {view.validation.length === 0 ? <div class="validation-ok"><strong>All checks passed</strong><p>Weapon skills, ammunition, cyberware capacity, derived values, and catalog mappings are internally consistent.</p></div> : <div class="validation-list">{view.validation.map((issue, index) => <article key={`${issue.code}-${issue.subject}-${index}`} class={`validation-issue ${issue.severity}`}><span>{issue.severity}</span><div><strong>{issue.subject ?? issue.code}</strong><p>{issue.message}</p>{issue.suggestedAction && <small>{issue.suggestedAction}</small>}</div></article>)}</div>}
+                  <header><div><span class="kicker">Character check</span><h3>Check this operative</h3></div><div class="validation-counts"><span>{errorCount} errors</span><span>{warningCount} warnings</span><span>{view.validation.filter((issue) => issue.severity === 'info').length} notes</span></div></header>
+                  {view.validation.length === 0 ? <div class="validation-ok"><strong>Everything looks good</strong><p>The NPC is ready to use.</p></div> : <div class="validation-list">{view.validation.map((issue, index) => <article key={`${issue.code}-${issue.subject}-${index}`} class={`validation-issue ${issue.severity}`}><span>{issue.severity}</span><div><strong>{issue.subject ?? issue.code}</strong><p>{issue.message}</p>{issue.suggestedAction && <small>{issue.suggestedAction}</small>}</div></article>)}</div>}
                 </section>}
 
                 {tab === 'text' && <section class="tab-content code-pane"><div><button onClick={() => copyText(view.text)}>Copy text</button><button onClick={() => download(`${filename}.txt`, view.text, 'text/plain')}>Download</button></div><pre>{view.text}</pre></section>}
 
                 {tab === 'exports' && <section class="tab-content export-grid">
-                  <article><span>Primary</span><h3>Native JSON</h3><p>Complete, versioned NPC data with combat summary, validation, and generation explanations.</p><div><button onClick={() => copyText(nativeJson)}>Copy</button><button onClick={() => download(`${filename}.json`, nativeJson, 'application/json')}>Download</button></div></article>
-                  <article><span>Table use</span><h3>Markdown</h3><p>Portable stat block for notes, wikis, campaign documents, and chat.</p><div><button onClick={() => copyText(markdown)}>Copy</button><button onClick={() => download(`${filename}.md`, markdown, 'text/markdown')}>Download</button></div></article>
-                  <article><span>Compatibility</span><h3>Foundry JSON</h3><p>Secondary compatibility export using the original generator's lightweight Foundry structure.</p><div><button onClick={() => copyText(foundryJson)}>Copy</button><button onClick={() => download(`${filename}-foundry.json`, foundryJson, 'application/json')}>Download</button></div></article>
-                  <article><span>Table use</span><h3>Print sheet</h3><p>Print the current operative or save a clean PDF through the browser print dialog.</p><div><button onClick={printNpc}>Print</button></div></article>
-                  <article><span>Debug</span><h3>CLI command</h3><p>Reproduce the same seeded inputs upstream. When AI is enabled, the command uses the $MODEL_API_KEY environment variable and never embeds the key.</p><div><button onClick={() => copyText(view.command)}>Copy command</button></div></article>
+                  <article><span>Backup</span><h3>NPC file</h3><p>Save the complete NPC so you can import it again later.</p><div><button onClick={() => copyText(nativeJson)}>Copy</button><button onClick={() => download(`${filename}.json`, nativeJson, 'application/json')}>Download</button></div></article>
+                  <article><span>Share</span><h3>Markdown</h3><p>Copy the stat block into notes, campaign documents, or chat.</p><div><button onClick={() => copyText(markdown)}>Copy</button><button onClick={() => download(`${filename}.md`, markdown, 'text/markdown')}>Download</button></div></article>
+                  <article><span>Foundry VTT</span><h3>Foundry JSON</h3><p>Import this NPC into Foundry.</p><div><button onClick={() => copyText(foundryJson)}>Copy</button><button onClick={() => download(`${filename}-foundry.json`, foundryJson, 'application/json')}>Download</button></div></article>
+                  <article><span>Print</span><h3>Print sheet</h3><p>Print the operative or save it as a PDF.</p><div><button onClick={printNpc}>Print</button></div></article>
+                  <article><span>Repeat</span><h3>Generator command</h3><p>Create this NPC again with the same choices.</p><div><button onClick={() => copyText(view.command)}>Copy command</button></div></article>
                 </section>}
               </div>
             )}
@@ -665,11 +894,12 @@ export function App() {
         </div>
       )}
       <footer class="app-footer">
-        <span><b>RED//OPS</b> TABLE SYSTEM</span>
-        <span>UNOFFICIAL FAN UTILITY · GPL-3.0</span>
+        <span><b>RED//OPS</b> - RAPID ENCOUNTER DEPLOYMENT</span>
+        <span>UNOFFICIAL FAN UTILITY · <a href="https://github.com/Eppinguin/red-ops" target="_blank" rel="noreferrer">GITHUB</a></span>
         <span>GEN {meta?.commit.slice(0, 8) ?? 'LOADING'} · DATA {meta?.referenceManifest.foundry?.ref ?? 'FALLBACK'}</span>
       </footer>
-      <DetailDrawer selected={selectedReference} conflicts={meta?.referenceConflicts ?? []} onClose={() => setSelectedReference(null)} />
+      <input ref={importNpcInput} hidden type="file" accept=".json,application/json" onChange={importNpc} />
+      <DetailDrawer selected={selectedReference} onClose={() => setSelectedReference(null)} />
     </main>
   );
 }

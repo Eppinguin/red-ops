@@ -1,0 +1,359 @@
+[
+  {
+    "name": "Light Melee",
+    "possible_names": [
+      "Combat Knife",
+      "Tomahawk"
+    ],
+    "type": "weapon",
+    "price": 50,
+    "unique_tags": [
+      "LightMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "1d6",
+    "rate_of_fire": 2
+  },
+  {
+    "name": "Medium Melee",
+    "possible_names": [
+      "Baseball Bat",
+      "Crowbar",
+      "Machete",
+      "Sword"
+    ],
+    "type": "weapon",
+    "price": 50,
+    "unique_tags": [
+      "MediumMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2
+  },
+  {
+    "name": "Heavy Melee",
+    "possible_names": [
+      "Lead Pipe",
+      "Spiked Bat"
+    ],
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "HeavyMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "3d6",
+    "rate_of_fire": 2
+  },
+  {
+    "name": "Very Heavy Melee",
+    "possible_names": [
+      "Chainsaw",
+      "Sledgehammer",
+      "Helicopter Blades",
+      "Naginata"
+    ],
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "VeryHeavyMeleeWeapon",
+      "MeleeWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1
+  },
+  {
+    "name": "Medium Pistol",
+    "beautiful_names_by_quality": {
+      "poor": "Dai Lung Streetmaster",
+      "standard": "Federated Arms X-9mm",
+      "excellent": "Militech \"Avenger\""
+    },
+    "type": "weapon",
+    "price": 50,
+    "unique_tags": [
+      "MediumPistol",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 2,
+    "magazine": 12,
+    "ammo_types": [
+      "Medium Pistol"
+    ]
+  },
+  {
+    "name": "Heavy Pistol",
+    "beautiful_names_by_quality": {
+      "poor": "Dai Lung Magnum",
+      "standard": "Mustang Arms \"Mark III\"",
+      "excellent": "Nova \"Cityhunter\""
+    },
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "HeavyPistol",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "3d6",
+    "rate_of_fire": 2,
+    "magazine": 8,
+    "ammo_types": [
+      "Heavy Pistol"
+    ]
+  },
+  {
+    "name": "Very Heavy Pistol",
+    "beautiful_names_by_quality": {
+      "poor": "Federated Arms \"Super Chief\"",
+      "standard": "Sternmeyer P-35",
+      "excellent": "Militech \"Boomer Buster\""
+    },
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "VeryHeavyPistol",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "magazine": 8,
+    "ammo_types": [
+      "Very Heavy Pistol"
+    ]
+  },
+  {
+    "name": "Bow",
+    "beautiful_names_by_quality": {
+      "poor": "GunMart \"Sherwood\"",
+      "standard": "Eagletech \"Tomcat\"",
+      "excellent": "Eagletech \"Bearcat\""
+    },
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "Bow",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "ammo_types": [
+      "Arrow"
+    ]
+  },
+  {
+    "name": "Crossbow",
+    "beautiful_names_by_quality": {
+      "poor": "GunMart \"Hunter\"",
+      "standard": "Eagletech \"Striker\"",
+      "excellent": "Eagletech \"Scorpion\""
+    },
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "Crossbow",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "4d6",
+    "rate_of_fire": 1,
+    "ammo_types": [
+      "Arrow"
+    ]
+  },
+  {
+    "name": "SMG",
+    "beautiful_names_by_quality": {
+      "poor": "Federated Arms Tech-Assault III",
+      "standard": "Militech \"Mini-Gat\"",
+      "excellent": "Arasaka \"Minami 10\""
+    },
+    "type": "weapon",
+    "price": 100,
+    "unique_tags": [
+      "SMG",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "AutofireWeapon"
+    ],
+    "damage": "2d6",
+    "rate_of_fire": 1,
+    "magazine": 30,
+    "ammo_types": [
+      "Medium Pistol"
+    ]
+  },
+  {
+    "name": "Heavy SMG",
+    "beautiful_names_by_quality": {
+      "poor": "Chadran Arms \"City Reaper\"",
+      "standard": "Sternmeyer SMG-21",
+      "excellent": "Militech \"Viper\""
+    },
+    "type": "weapon",
+    "unique_tags": [
+      "HeavySMG",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "AutofireWeapon"
+    ],
+    "price": 100,
+    "damage": "3d6",
+    "rate_of_fire": 1,
+    "magazine": 40,
+    "ammo_types": [
+      "Heavy Pistol"
+    ]
+  },
+  {
+    "name": "Shotgun",
+    "beautiful_names_by_quality": {
+      "poor": "GunMart \"Home Defender\"",
+      "standard": "Arasaka \"Rapid Assault\"",
+      "excellent": "Militech \"Bulldog\""
+    },
+    "type": "weapon",
+    "price": 500,
+    "unique_tags": [
+      "Shotgun",
+      "CloseRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "5d6",
+    "rate_of_fire": 1,
+    "magazine": 4,
+    "ammo_types": [
+      "Shotgun Slug",
+      "Shotgun Shell"
+    ]
+  },
+  {
+    "name": "Assault Rifle",
+    "beautiful_names_by_quality": {
+      "poor": "Chadran Arms \"Jungle Reaper\"",
+      "standard": "Militech \"Ronin\"",
+      "excellent": "Militech \"Dragon\""
+    },
+    "type": "weapon",
+    "price": 500,
+    "unique_tags": [
+      "AssaultRifle",
+      "WideRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "AutofireWeapon"
+    ],
+    "damage": "5d6",
+    "rate_of_fire": 1,
+    "magazine": 25,
+    "ammo_types": [
+      "Rifle"
+    ]
+  },
+  {
+    "name": "Sniper Rifle",
+    "beautiful_names_by_quality": {
+      "poor": "GunMart \"Snipe-Star\"",
+      "standard": "Nomad \"Long Rifle\"",
+      "excellent": "Arasaka WSSA Sniper System"
+    },
+    "type": "weapon",
+    "price": 500,
+    "unique_tags": [
+      "SniperRifle",
+      "WideRangedWeapon"
+    ],
+    "tags": [
+      "RangedWeapon"
+    ],
+    "damage": "5d6",
+    "rate_of_fire": 1,
+    "magazine": 4,
+    "ammo_types": [
+      "Rifle"
+    ]
+  },
+  {
+    "name": "Grenade Launcher",
+    "beautiful_names_by_quality": {
+      "poor": "Towa Manufacturing Type-G",
+      "standard": "Militech \"Mini-Grenade\"",
+      "excellent": "Tsunami Arms Type-18"
+    },
+    "type": "weapon",
+    "price": 500,
+    "unique_tags": [
+      "GrenadeLauncher"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "LimitedAmmoWeapon"
+    ],
+    "damage": "6d6",
+    "rate_of_fire": 1,
+    "magazine": 2,
+    "ammo_types": [
+      "Grenade"
+    ]
+  },
+  {
+    "name": "Rocket Launcher",
+    "beautiful_names_by_quality": {
+      "poor": "Towa Manufacturing Type-R",
+      "standard": "Militech \"Urban\"",
+      "excellent": "Militech \"Hotshot\""
+    },
+    "type": "weapon",
+    "price": 500,
+    "unique_tags": [
+      "RocketLauncher"
+    ],
+    "tags": [
+      "RangedWeapon",
+      "LimitedAmmoWeapon"
+    ],
+    "damage": "8d6",
+    "rate_of_fire": 1,
+    "magazine": 1,
+    "ammo_types": [
+      "Rocket"
+    ]
+  },
+  {
+    "name": "Martial Arts",
+    "possible_names": [
+      "Aikido (Disarming Combination, Iron Grip)",
+      "Karate (Armor Breaking Combination, Bone Breaking Strike)",
+      "Judo (Counter Throw, Grab Escape)",
+      "Taekwondo (Pressure Point Strike, Flying Kick)"
+    ],
+    "type": "weapon",
+    "unique_tags": [
+      "MartialArts",
+      "MeleeWeapon"
+    ],
+    "rate_of_fire": 2
+  }
+]

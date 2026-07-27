@@ -1,0 +1,284 @@
+[
+  {
+    "name": "Cyberaudio Suite",
+    "type": "cyberware",
+    "price": 500,
+    "required_containers": [
+      "Auditory System"
+    ],
+    "container_capacity": 3,
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Discount Cyberaudio Suite",
+    "type": "cyberware",
+    "price": 100,
+    "required_containers": [
+      "Auditory System"
+    ],
+    "container_capacity": 1,
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Amplified Hearing",
+    "type": "cyberware",
+    "price": 100,
+    "modifiers": [
+      {
+        "name": "Perception",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Audio Recorder",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "AudioRecorder"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Bug Detector",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "BugDetector"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Homing Tracer",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "HomingTracer"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "EBM PiR2",
+    "type": "cyberware",
+    "price": 500,
+    "quality": "excellent",
+    "unique_tags": [
+      "Agent"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "MediaWare BrainGen",
+    "type": "cyberware",
+    "price": 50,
+    "quality": "poor",
+    "unique_tags": [
+      "Agent"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Raven Microcybernetics Drake",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "Agent"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Rocklin Augmentics Neuron",
+    "type": "cyberware",
+    "price": 1000,
+    "quality": "excellent",
+    "unique_tags": [
+      "Agent"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Level Damper",
+    "type": "cyberware",
+    "price": 100,
+    "unique_tags": [
+      "EarsProtection"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Radio Communicator",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "RadioCommunicator"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Radio Scanner/Music Player",
+    "type": "cyberware",
+    "price": 50,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "RadioScannerMusicPlayer"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Radar Detector",
+    "type": "cyberware",
+    "price": 500,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "RadarDetector"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Scrambler/Descrambler",
+    "type": "cyberware",
+    "price": 100,
+    "tags": [
+      "Ability"
+    ],
+    "unique_tags": [
+      "ScramblerDescrambler"
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  },
+  {
+    "name": "Voice Stress Analyzer",
+    "type": "cyberware",
+    "price": 100,
+    "modifiers": [
+      {
+        "name": "HumanPerception",
+        "simple": 2
+      },
+      {
+        "name": "Interrogation",
+        "simple": 2
+      }
+    ],
+    "required_containers": [
+      "Sensor Array",
+      "Cyberaudio Suite",
+      "Discount Cyberaudio Suite"
+    ],
+    "size_in_container": 1,
+    "max_equipped_items": 1,
+    "max_humanity_loss": 2
+  }
+]

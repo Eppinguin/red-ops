@@ -13,6 +13,7 @@ import type { CombatantSide, EncounterAction, EncounterCombatant, OfficialNpcTie
 import type { GeneratedNpcView } from '../engine/types';
 import type { SavedNpcRecord } from '../storage';
 import { RandomEncounterPanel } from './RandomEncounterBuilder';
+import { useScrollLock } from './useScrollLock';
 
 type InputEvent = TargetedEvent<HTMLInputElement>;
 type SelectEvent = TargetedEvent<HTMLSelectElement>;
@@ -286,6 +287,7 @@ export function AddCombatantsDrawer({
   const [count, setCount] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  useScrollLock(true);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

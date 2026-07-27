@@ -1,0 +1,203 @@
+[
+    {
+        "name": "Neural Link",
+        "type": "cyberware",
+        "price": 500,
+        "required_containers": [
+            "Neuralware"
+        ],
+        "container_capacity": 5,
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Braindance Recorder",
+        "type": "cyberware",
+        "price": 500,
+        "tags": [
+            "Ability"
+        ],
+        "unique_tags": [
+            "AudioRecorder",
+            "VideoCamera"
+        ],
+        "required_containers": [
+            "Neural Link"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Chipware Socket",
+        "type": "cyberware",
+        "price": 500,
+        "container_capacity": 1,
+        "required_containers": [
+            "Neural Link"
+        ],
+        "size_in_container": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Budget Chipware Socket",
+        "type": "cyberware",
+        "price": 100,
+        "container_capacity": 1,
+        "required_containers": [
+            "Neural Link"
+        ],
+        "size_in_container": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Interface Plugs",
+        "type": "cyberware",
+        "price": 500,
+        "required_containers": [
+            "Neural Link"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Kerenzikov",
+        "type": "cyberware",
+        "price": 500,
+        "unique_tags": [
+            "Speedware"
+        ],
+        "modifiers": [
+            {
+                "name": "Initiative",
+                "simple": 2
+            }
+        ],
+        "required_containers": [
+            "Neural Link"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Sandevistan",
+        "type": "cyberware",
+        "price": 500,
+        "tags": [
+            "Action"
+        ],
+        "unique_tags": [
+            "Speedware"
+        ],
+        "modifiers": [
+            {
+                "name": "Initiative",
+                "simple": 3
+            }
+        ],
+        "required_containers": [
+            "Neural Link"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Chemical Analyzer",
+        "type": "cyberware",
+        "price": 500,
+        "tags": [
+            "Ability"
+        ],
+        "unique_tags": [
+            "ChemicalAnalyzer"
+        ],
+        "required_containers": [
+            "Chipware Socket",
+            "Budget Chipware Socket"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Olfactory Boost",
+        "type": "cyberware",
+        "price": 100,
+        "tags": [
+            "Ability"
+        ],
+        "required_containers": [
+            "Chipware Socket",
+            "Budget Chipware Socket"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Pain Editor",
+        "type": "cyberware",
+        "price": 1000,
+        "required_containers": [
+            "Chipware Socket",
+            "Budget Chipware Socket"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Tactile Boost",
+        "type": "cyberware",
+        "price": 100,
+        "tags": [
+            "Ability"
+        ],
+        "required_containers": [
+            "Chipware Socket",
+            "Budget Chipware Socket"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Explicit Memory Stimulator",
+        "type": "cyberware",
+        "price": 100,
+        "tags": [
+            "Ability"
+        ],
+        "modifiers": [
+            {
+                "name": "Concentration",
+                "simple": 2
+            }
+        ],
+        "required_containers": [
+            "Chipware Socket",
+            "Budget Chipware Socket"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    },
+    {
+        "name": "Reflex Co-Processor",
+        "type": "cyberware",
+        "price": 500,
+        "required_containers": [
+            "Neural Link"
+        ],
+        "required_condition": [
+            "can_add = npc.get_stat_or_skill_value(\"REF\").get_total() < 8"
+        ],
+        "size_in_container": 1,
+        "max_equipped_items": 1,
+        "max_humanity_loss": 2
+    }
+]

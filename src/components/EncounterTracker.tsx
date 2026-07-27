@@ -28,6 +28,7 @@ import { AttackResolverDialog } from './AttackResolverDialog';
 import { RangeDvDialog } from './RangeDvDialog';
 import { randomEncounterBrief } from './RandomEncounterBuilder';
 import { AddCombatantsDrawer, type AddTab } from './AddCombatantsDrawer';
+import { useMediaQuery, useScrollLock } from './useScrollLock';
 import type { RandomEncounterResult } from '../encounter/randomEncounters';
 import type { CatalogEntry } from '../content/types';
 import type {
@@ -238,6 +239,7 @@ function DamageDialog({ combatant, onClose, dispatch }: {
   const [location, setLocation] = useState<ArmorLocation>('body');
   const [damage, setDamage] = useState(10);
   const preview = calculateDamage(combatant, location, damage);
+  useScrollLock(true);
   return (
     <div class="encounter-modal-backdrop" onMouseDown={(event: MouseDivEvent) => event.currentTarget === event.target && onClose()}>
       <section class="damage-dialog panel" role="dialog" aria-modal="true" aria-labelledby="damage-title">
@@ -791,6 +793,9 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
     return ordered[(index + 1) % ordered.length]?.id ?? null;
   }, [ordered, state.activeCombatantId]);
   const selected = state.combatants.find((combatant) => combatant.id === selectedId) ?? null;
+  // Must track the width at which the inspector becomes a bottom sheet in CSS.
+  const inspectorIsSheet = useMediaQuery('(max-width: 1320px)');
+  useScrollLock(selected !== null && inspectorIsSheet);
   const damageTarget = state.combatants.find((combatant) => combatant.id === damageId) ?? null;
   const resolverAttacker = state.combatants.find((combatant) => combatant.id === attackResolver?.combatantId) ?? null;
   const resolverAttack = resolverAttacker?.attacks.find((attack) => attack.id === attackResolver?.attackId) ?? null;
@@ -822,6 +827,14 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
+      // Escape closes the inspector, but not while a field inside it is focused —
+      // there the first Escape belongs to that editor (reverting a rename), and a
+      // second one, now that focus has left the field, closes the sheet.
+      if (event.key === 'Escape' && selectedId) {
+        if (target?.matches('input, textarea, select, [contenteditable="true"]')) return;
+        setSelectedId(null);
+        return;
+      }
       if (target?.matches('input, textarea, select, button, [contenteditable="true"]')) return;
       if (event.key.toLowerCase() === 'n' || event.key === 'ArrowDown') {
         event.preventDefault();
@@ -1004,6 +1017,10 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
             <button type="button" class="danger-text" onClick={() => window.confirm('Clear every combatant from this encounter?') && dispatch({ type: 'clear' })}>Clear encounter</button>
           </footer>}
         </div>
+        {/* Backdrop for the mobile bottom sheet only; CSS hides it once the
+            inspector returns to being a side column. Tapping it closes, matching
+            the other overlays. */}
+        {selected && <div class="inspector-backdrop" role="presentation" onClick={() => setSelectedId(null)} />}
         {selected && <CombatantInspector combatant={selected} dispatch={dispatch} onClose={() => setSelectedId(null)} onDamage={() => setDamageId(selected.id)} onResolveAttack={(attackId) => setAttackResolver({ combatantId: selected.id, attackId })} />}
       </div>
       {addTab && <AddCombatantsDrawer
