@@ -1,0 +1,86 @@
+.npc-editor-fab-wrap {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 80;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: end;
+}
+
+.npc-editor-fab {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 11rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--line-hot);
+  background: var(--acid);
+  color: var(--on-accent);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+  text-align: left;
+}
+
+.npc-editor-fab span {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.npc-editor-fab small {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.78;
+}
+
+.npc-editor-fab-error {
+  max-width: 20rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--red);
+  background: var(--surface-1);
+  color: var(--ink);
+}
+
+.npc-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.npc-editor-modal {
+  width: min(1180px, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  border: 1px solid var(--line-strong);
+}
+
+@media (max-width: 720px) {
+  .npc-editor-fab-wrap {
+    right: 0.65rem;
+    bottom: max(0.65rem, env(safe-area-inset-bottom));
+    left: 0.65rem;
+  }
+
+  .npc-editor-fab {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .npc-editor-overlay {
+    padding: 0;
+  }
+
+  .npc-editor-modal {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+}
