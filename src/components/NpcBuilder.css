@@ -1,0 +1,430 @@
+.npc-builder {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  color: var(--ink);
+}
+
+.builder-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--surface-0) 94%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.builder-toolbar h2,
+.builder-section h3 {
+  margin: 0;
+}
+
+.builder-toolbar p,
+.builder-help,
+.builder-advanced p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.builder-toolbar-actions,
+.builder-bottom-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.builder-section,
+.builder-advanced {
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+}
+
+.builder-section {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.builder-section > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.builder-section > header > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+}
+
+.builder-section > header > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.builder-field-grid,
+.builder-textarea-grid,
+.builder-item-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.builder-field-grid label,
+.builder-textarea-grid label,
+.builder-item-fields label,
+.builder-full-field,
+.builder-add-row label,
+.builder-amount {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.builder-field-grid label > span,
+.builder-textarea-grid label > span,
+.builder-item-fields label > span,
+.builder-full-field > span,
+.builder-add-row label > span,
+.builder-amount > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.npc-builder input,
+.npc-builder select,
+.npc-builder textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.builder-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.builder-stats-grid label {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+  text-align: center;
+}
+
+.builder-stats-grid label span {
+  color: var(--cyan);
+  font-weight: 800;
+}
+
+.builder-stats-grid input {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.builder-search {
+  max-width: 28rem;
+}
+
+.builder-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.builder-skill-grid label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+}
+
+.builder-skill-grid label > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.builder-skill-grid small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.builder-subhead,
+.builder-cyber-root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.builder-enemy-list,
+.builder-item-list,
+.builder-cyber-children {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.builder-enemy-card,
+.builder-item,
+.builder-cyber-node {
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+}
+
+.builder-enemy-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+}
+
+.builder-item {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+}
+
+.builder-item > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.builder-item > header > div {
+  min-width: 0;
+}
+
+.builder-item > header strong,
+.builder-item > header small {
+  display: block;
+}
+
+.builder-item > header strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.builder-item > header small {
+  margin-top: 0.15rem;
+  color: var(--muted);
+}
+
+.builder-item-advanced {
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+}
+
+.builder-item-advanced summary,
+.builder-advanced summary {
+  cursor: pointer;
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.builder-item-advanced[open] summary {
+  margin-bottom: 0.7rem;
+}
+
+.builder-check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  align-self: end;
+}
+
+.builder-check input {
+  width: auto;
+}
+
+.builder-add-row {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) auto auto;
+  gap: 0.55rem;
+  align-items: end;
+  padding: 0.7rem;
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-sunken);
+}
+
+.builder-inventory-entry {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.builder-amount {
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  background: var(--surface-inset);
+}
+
+.builder-cyber-node {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.7rem;
+}
+
+.builder-cyber-node.root {
+  border-color: var(--line-strong);
+}
+
+.builder-cyber-root {
+  padding: 0.25rem 0.15rem;
+}
+
+.builder-cyber-root span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.builder-cyber-children {
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--line-strong);
+}
+
+.builder-empty {
+  margin: 0;
+  padding: 0.9rem;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  text-align: center;
+}
+
+.builder-advanced {
+  padding: 0.9rem 1rem;
+}
+
+.builder-advanced[open] summary {
+  margin-bottom: 0.7rem;
+}
+
+.builder-advanced textarea {
+  min-height: 28rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.builder-bottom-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  justify-content: flex-end;
+  padding: 0.75rem;
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--surface-0) 94%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 900px) {
+  .builder-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .builder-skill-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .npc-builder {
+    gap: 0.7rem;
+    padding: 0.65rem;
+  }
+
+  .builder-toolbar {
+    position: static;
+    display: grid;
+    padding: 0.8rem;
+  }
+
+  .builder-toolbar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .builder-toolbar-actions button,
+  .builder-bottom-actions button {
+    min-height: 2.8rem;
+  }
+
+  .builder-section {
+    gap: 0.75rem;
+    padding: 0.8rem;
+  }
+
+  .builder-section > header {
+    align-items: flex-start;
+  }
+
+  .builder-section > header > div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .builder-field-grid,
+  .builder-textarea-grid,
+  .builder-item-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .builder-skill-grid label {
+    grid-template-columns: minmax(0, 1fr) 4.5rem;
+  }
+
+  .builder-add-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .builder-add-row label {
+    grid-column: 1 / -1;
+  }
+
+  .builder-inventory-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-amount {
+    grid-template-columns: 1fr 5rem;
+    align-items: center;
+  }
+
+  .builder-cyber-children {
+    margin-left: 0.3rem;
+    padding-left: 0.45rem;
+  }
+
+  .builder-bottom-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    bottom: 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
