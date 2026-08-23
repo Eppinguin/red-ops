@@ -1,30 +1,14 @@
 import { useState } from 'preact/hooks';
-import { buildReferenceCatalog } from '../content/catalog';
-import type { CatalogEntry } from '../content/types';
 import { createBlankManualView } from '../engine/builder';
-import { loadCatalog } from '../engine/catalog';
-import type { Catalog, GeneratedNpcView } from '../engine/types';
+import type { GeneratedNpcView } from '../engine/types';
 import { saveNpc, type SavedNpcRecord } from '../storage';
 import { NpcBuilder } from './NpcBuilder';
-
-interface BuilderEngine {
-  catalog: Catalog;
-  referenceEntries: readonly CatalogEntry[];
-}
+import { loadBuilderEngine, type BuilderEngine } from './builderEngine';
+import { publishCurrentNpc } from './npcEditorBridge';
 
 interface BuilderSession extends BuilderEngine {
   record: SavedNpcRecord | null;
   view: GeneratedNpcView;
-}
-
-let builderEnginePromise: Promise<BuilderEngine> | null = null;
-
-function loadBuilderEngine(): Promise<BuilderEngine> {
-  builderEnginePromise ??= loadCatalog().then(async (catalog) => {
-    const reference = await buildReferenceCatalog(catalog);
-    return { catalog, referenceEntries: reference.entries };
-  });
-  return builderEnginePromise;
 }
 
 export function NpcLibrary({
@@ -41,6 +25,11 @@ export function NpcLibrary({
   const [builder, setBuilder] = useState<BuilderSession | null>(null);
   const [builderBusy, setBuilderBusy] = useState(false);
   const [builderError, setBuilderError] = useState<string | null>(null);
+
+  const openRecord = (record: SavedNpcRecord) => {
+    publishCurrentNpc(record.view);
+    onOpen(record);
+  };
 
   const openBuilder = async (record: SavedNpcRecord | null) => {
     if (builderBusy) return;
@@ -64,16 +53,13 @@ export function NpcLibrary({
     if (!builder) return;
     if (builder.record) {
       const saved = await saveNpc(nextView, builder.record.id);
-      // Keep the parent's existing record object current without changing the
-      // library callback contract. The next parent render sees the updated view.
       Object.assign(builder.record, saved);
+      publishCurrentNpc(saved.view);
       onOpen(saved);
       return;
     }
 
-    // A brand-new manual NPC opens in the normal workspace first. From there the
-    // existing Save action persists it and updates the parent library state just
-    // like a generated NPC, avoiding a second persistence path in App.
+    publishCurrentNpc(nextView);
     onOpen({
       id: `manual-${Date.now()}`,
       label: `${nextView.npc.name} ${nextView.npc.surname}`,
@@ -117,7 +103,7 @@ export function NpcLibrary({
             <h3>{record.label}</h3>
             <p>{record.view.rank.name} · {record.view.role.name} · seed {record.view.seed}</p>
             <div>
-              <button type="button" onClick={() => onOpen(record)}>Open</button>
+              <button type="button" onClick={() => openRecord(record)}>Open</button>
               <button type="button" disabled={builderBusy} onClick={() => void openBuilder(record)}>Edit</button>
               <button type="button" class="danger" onClick={() => onDelete(record)}>Delete</button>
             </div>
