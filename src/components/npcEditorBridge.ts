@@ -23,6 +23,10 @@ export function installNpcWorkerBridge(): void {
       activeWorker = this;
       this.addEventListener('message', (event: MessageEvent) => {
         const data = event.data as { type?: unknown; view?: unknown } | null;
+        if (data?.type === 'generation-progress') {
+          publish(null);
+          return;
+        }
         if (data?.type === 'result' && data.view) publish(data.view as GeneratedNpcView);
       });
     }
