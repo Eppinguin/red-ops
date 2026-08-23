@@ -27,6 +27,20 @@ export function NpcEditorShell({ children }: { children: ComponentChildren }) {
 
   useEffect(() => subscribeCurrentNpc(setCurrent), []);
 
+  useEffect(() => {
+    if (!session) return;
+    const previousOverflow = document.body.style.overflow;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSession(null);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [session]);
+
   const openEditor = async () => {
     if (!current || loading) return;
     setLoading(true);
