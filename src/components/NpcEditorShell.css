@@ -8,6 +8,10 @@
   justify-items: end;
 }
 
+#app:has(.library .npc-builder) .npc-editor-fab-wrap {
+  display: none;
+}
+
 .npc-editor-fab {
   display: grid;
   gap: 0.12rem;
@@ -82,5 +86,12 @@
     max-height: none;
     border: 0;
     border-radius: 0;
+  }
+}
+
+@media print {
+  .npc-editor-fab-wrap,
+  .npc-editor-overlay {
+    display: none !important;
   }
 }
