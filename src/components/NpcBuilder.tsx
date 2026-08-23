@@ -33,11 +33,19 @@ function serializeNpc(npc: Npc): string {
 function parseNpc(text: string): Npc {
   const parsed: unknown = JSON.parse(text);
   if (!isRecord(parsed)) throw new Error('NPC data must be a JSON object.');
+  if (typeof parsed.name !== 'string' || typeof parsed.surname !== 'string') throw new Error('NPC name and surname must be strings.');
+  if (typeof parsed.sex !== 'boolean') throw new Error('NPC sex must be a boolean.');
+  if (typeof parsed.age !== 'number' || !Number.isFinite(parsed.age)) throw new Error('NPC age must be a number.');
+  if (parsed.nationality !== null && typeof parsed.nationality !== 'string') throw new Error('NPC nationality must be a string or null.');
+  if (typeof parsed.description !== 'string' || typeof parsed.role !== 'string') throw new Error('NPC description and role must be strings.');
+  if (!isRecord(parsed.lifepath)) throw new Error('NPC lifepath must be an object.');
+  if (!['NONE', 'SILVER', 'EXECUTIVE'].includes(String(parsed.traumaTeamStatus))) throw new Error('NPC Trauma Team status is invalid.');
   if (!isRecord(parsed.stats)) throw new Error('NPC data must contain a stats object.');
   if (!isRecord(parsed.skills)) throw new Error('NPC data must contain a skills object.');
   if (!Array.isArray(parsed.inventory)) throw new Error('NPC data must contain an inventory array.');
-  if (!isRecord(parsed.cyberware) || !Array.isArray(parsed.cyberware.children)) throw new Error('NPC data must contain a cyberware tree.');
-  if (!Array.isArray(parsed.armor) || !Array.isArray(parsed.weapons)) throw new Error('NPC data must contain armor and weapons arrays.');
+  if (!isRecord(parsed.cyberware) || !isRecord(parsed.cyberware.item) || !Array.isArray(parsed.cyberware.children)) throw new Error('NPC data must contain a cyberware tree.');
+  if (!Array.isArray(parsed.armor) || !parsed.armor.every(isRecord)) throw new Error('NPC armor must be an array of items.');
+  if (!Array.isArray(parsed.weapons) || !parsed.weapons.every(isRecord)) throw new Error('NPC weapons must be an array of items.');
 
   const stats = new Map<StatName, number>();
   for (const stat of STAT_NAMES) {
@@ -48,15 +56,18 @@ function parseNpc(text: string): Npc {
 
   const skills = new Map<string, { skill: Skill; level: number }>();
   for (const [name, rawEntry] of Object.entries(parsed.skills)) {
-    if (!isRecord(rawEntry) || !isRecord(rawEntry.skill) || typeof rawEntry.level !== 'number') {
+    if (!isRecord(rawEntry) || !isRecord(rawEntry.skill) || typeof rawEntry.level !== 'number' || !Number.isFinite(rawEntry.level)) {
       throw new Error(`Skill ${name} is invalid.`);
+    }
+    if (typeof rawEntry.skill.name !== 'string' || typeof rawEntry.skill.link !== 'string' || typeof rawEntry.skill.type !== 'string') {
+      throw new Error(`Skill ${name} must contain name, linked stat, and type fields.`);
     }
     skills.set(name, rawEntry as unknown as { skill: Skill; level: number });
   }
 
   const inventory = new Map<string, InventoryEntry>();
   for (const rawEntry of parsed.inventory) {
-    if (!isRecord(rawEntry) || typeof rawEntry.key !== 'string' || !isRecord(rawEntry.item) || typeof rawEntry.amount !== 'number') {
+    if (!isRecord(rawEntry) || typeof rawEntry.key !== 'string' || !isRecord(rawEntry.item) || typeof rawEntry.amount !== 'number' || !Number.isFinite(rawEntry.amount)) {
       throw new Error('Every inventory entry needs key, item, and numeric amount fields.');
     }
     inventory.set(rawEntry.key, { item: rawEntry.item as unknown as Item, amount: rawEntry.amount });
@@ -201,7 +212,7 @@ export function NpcBuilder({
 
       <article class="card wide">
         <header><h3>Advanced NPC data</h3><span>complete editable model</span></header>
-        <p>Edit this JSON to add, remove, or change lifepath data, cyberware trees, armor, weapons, inventory entries, item modifiers, tags, prices, damage values, magazine sizes, and any other NPC field. Stats, skills and inventory are shown in JSON-friendly object/array form and are converted back to Maps when applied.</p>
+        <p>Edit this JSON to add, remove, or change lifepath data, cyberware trees, armor, weapons, inventory entries, item modifiers, tags, prices, damage values, magazine sizes, and any other NPC field. Stats, skills and inventory are shown in JSON-friendly object/array form and are converted back to Maps when applied. Rank and role are controlled by the selectors above.</p>
         <textarea
           aria-label="Complete NPC JSON"
           spellcheck={false}
