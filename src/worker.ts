@@ -5,8 +5,8 @@ import { loadCatalog, PYTHON_FAKER_LOCALES, UPSTREAM_COMMIT } from './engine/cat
 import { createGeneratedView } from './engine/format';
 import { generateNpc } from './engine/generator';
 import { generateAiDescription } from './engine/identity';
-import { createEditedView, createRerolledView } from './engine/refine';
-import type { Catalog, GenerateOptions, GeneratedNpcView, NpcCommand, NpcSection } from './engine/types';
+import { createIdentityFieldRerolledView, createRerolledView, type IdentityRerollField } from './engine/refine';
+import type { Catalog, GenerateOptions, GeneratedNpcView, NpcSection } from './engine/types';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 let loadedCatalog: Catalog | null = null;
@@ -43,12 +43,19 @@ async function boot(): Promise<void> {
   }
 }
 
-type WorkerRequest =
+/**
+ * `requestId` is echoed on the matching result so the page can route a reply to
+ * the caller that asked for it. The editor uses it to keep a reroll aimed at a
+ * draft from being mistaken for a new generation.
+ */
+type WorkerRequest = { requestId?: string } & (
   | { type: 'generate'; options: GenerateOptions }
   | { type: 'reroll'; options: GenerateOptions; current: GeneratedNpcView; section: NpcSection; seed: number }
-  | { type: 'edit'; current: GeneratedNpcView; command: NpcCommand };
+  | { type: 'reroll-identity-field'; options: GenerateOptions; current: GeneratedNpcView; field: IdentityRerollField; seed: number }
+);
 
 scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
+  const { requestId } = event.data;
   try {
     const { catalog, reference } = await ensureCatalogs();
     if (event.data.type === 'generate') {
@@ -59,7 +66,32 @@ scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         type: 'result',
         view: createGeneratedView(core, catalog, reference.entries),
         warning: core.warning,
+        requestId,
       });
+      return;
+    }
+
+    if (event.data.type === 'reroll-identity-field') {
+      const { field, seed, current } = event.data;
+      const candidateOptions: GenerateOptions = {
+        ...current.options,
+        rank: current.rank.name,
+        role: current.role.name,
+        nationality: field === 'nationality' ? null : current.npc.nationality,
+        allow_lifepath: field === 'lifepath' ? true : current.options.allow_lifepath,
+        seed,
+        model_id: null,
+        model_api_key: null,
+        model_base_url: null,
+      };
+      const candidate = await generateNpc(catalog, candidateOptions, (progress) => {
+        scope.postMessage({
+          type: 'generation-progress',
+          progress: { stage: `Rerolling ${field}: ${progress.stage}`, value: progress.value },
+        });
+      }, reference.entries);
+      const view = createIdentityFieldRerolledView(current, candidate, field, catalog, reference.entries);
+      scope.postMessage({ type: 'result', view, warning: candidate.warning, requestId });
       return;
     }
 
@@ -102,7 +134,7 @@ scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           warning,
         };
         const view = createRerolledView(current, candidate, section, catalog, reference.entries);
-        scope.postMessage({ type: 'result', view, warning });
+        scope.postMessage({ type: 'result', view, warning, requestId });
         return;
       }
 
@@ -123,14 +155,17 @@ scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         });
       }, reference.entries);
       const view = createRerolledView(current, candidate, section, catalog, reference.entries);
-      scope.postMessage({ type: 'result', view, warning: candidate.warning });
+      scope.postMessage({ type: 'result', view, warning: candidate.warning, requestId });
       return;
     }
 
-    const view = createEditedView(event.data.current, event.data.command, catalog, reference.entries);
-    scope.postMessage({ type: 'result', view, warning: null });
+    throw new Error(`Unsupported generator request: ${JSON.stringify(event.data)}`);
   } catch (error) {
-    scope.postMessage({ type: 'generation-error', error: error instanceof Error ? error.stack ?? error.message : String(error) });
+    scope.postMessage({
+      type: 'generation-error',
+      error: error instanceof Error ? error.stack ?? error.message : String(error),
+      requestId,
+    });
   }
 };
 

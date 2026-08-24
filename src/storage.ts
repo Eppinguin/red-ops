@@ -111,10 +111,10 @@ function normalizeRecord(record: SavedNpcRecord): SavedNpcRecord {
   return { ...record, view: normalizeSavedNpcView(record.view) };
 }
 
-export async function saveNpc(view: GeneratedNpcView): Promise<SavedNpcRecord> {
+export async function saveNpc(view: GeneratedNpcView, existingId?: string): Promise<SavedNpcRecord> {
   const savedAt = new Date().toISOString();
   const record: SavedNpcRecord = {
-    id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${crypto.getRandomValues(new Uint32Array(1))[0]}`,
+    id: existingId ?? (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${crypto.getRandomValues(new Uint32Array(1))[0]}`),
     label: `${view.npc.name} ${view.npc.surname}`,
     savedAt,
     view: normalizeSavedNpcView(view),

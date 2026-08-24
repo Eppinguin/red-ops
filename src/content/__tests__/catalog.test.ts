@@ -106,10 +106,35 @@ describe('canonical reference catalog', () => {
       ammo: {},
     } as unknown as Catalog;
 
-    expect(buildGeneratorCatalog(catalog)[0]?.mechanics).toMatchObject({
+    expect(buildGeneratorCatalog(catalog).find((entry) => entry.name === 'Medium Armorjack (Head)')?.mechanics).toMatchObject({
       kind: 'armor',
       stoppingPower: 12,
       locations: ['head'],
+    });
+  });
+
+  it('registers code-generated pocket money as a canonical item', () => {
+    const catalog = {
+      armor: [],
+      weapons: [],
+      cyberware: [],
+      equipment: [],
+      drugs: [],
+      junk: [],
+      skills: {},
+      ammo: {},
+    } as unknown as Catalog;
+
+    const entries = buildGeneratorCatalog(catalog);
+    const eddies = findCatalogEntry(entries, { name: 'Eddies', type: 'junk' });
+
+    expect(eddies).toMatchObject({
+      id: 'junk.eddies',
+      name: 'Eddies',
+      type: 'junk',
+      price: { amount: 1, category: 'cheap' },
+      mechanics: { kind: 'generic' },
+      generator: { generatorName: 'Eddies', generatorType: 'junk', eligible: true },
     });
   });
 

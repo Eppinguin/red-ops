@@ -28,6 +28,7 @@ import {
 } from './domain';
 import type { CatalogEntry } from '../content/types';
 import { PYTHON_FAKER_LOCALES } from './catalog';
+import { POCKET_MONEY_ITEM_DATA } from './generatedItems';
 import { generateAiDescription, generateIdentity } from './identity';
 import { chooseExponentialRandomElement, clamp, getAllowedItems, NumpyRandom, pythonRound } from './random';
 import type {
@@ -596,7 +597,7 @@ function generateEquipment(npc: Npc, template: Template, catalog: Catalog, rando
 
   if (template.rules.allow_money) {
     const money = Math.max(pythonRound(distributionValue(random, template.rank.pocket_money)), 0);
-    if (money > 0) setInventoryItem(npc, createItem({ name: 'Eddies', type: 'junk', price: 1 }), money);
+    if (money > 0) setInventoryItem(npc, createItem(POCKET_MONEY_ITEM_DATA), money);
   }
 }
 

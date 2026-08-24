@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyNpcCommand, mergeNpcSection } from '../refine';
+import { mergeIdentityField, mergeNpcSection } from '../refine';
 import type { Item, Npc } from '../types';
 
 function item(name: string, type: Item['type']): Item {
@@ -78,13 +78,27 @@ describe('NPC refinement', () => {
     expect(current.weapons[0]?.name).toBe('Old Weapon');
   });
 
-  it('applies clamped command edits without mutating the source NPC', () => {
+  it('rerolls only the requested identity field', () => {
     const current = npc();
-    const changed = applyNpcCommand(current, { type: 'set-stat', stat: 'BODY', value: 99 });
-    const skillChanged = applyNpcCommand(current, { type: 'set-skill', skill: 'Handgun', value: -2 });
+    current.lifepath = { personality: 'Current personality' };
+    const candidate = npc();
+    candidate.name = 'Fresh';
+    candidate.surname = 'Name';
+    candidate.age = 51;
+    candidate.sex = false;
+    candidate.nationality = 'de_DE';
+    candidate.lifepath = { personality: 'Fresh personality' };
 
-    expect(changed.stats.get('BODY')).toBe(10);
-    expect(current.stats.get('BODY')).toBe(4);
-    expect(skillChanged.skills.get('Handgun')?.level).toBe(0);
+    const renamed = mergeIdentityField(current, candidate, 'name');
+    expect(renamed.name).toBe('Fresh');
+    expect(renamed.surname).toBe('Name');
+    expect(renamed.age).toBe(30);
+    expect(renamed.sex).toBe(true);
+    expect(renamed.nationality).toBe('en_US');
+    expect(renamed.lifepath).toEqual({ personality: 'Current personality' });
+
+    const relifepathed = mergeIdentityField(current, candidate, 'lifepath');
+    expect(relifepathed.name).toBe('Current');
+    expect(relifepathed.lifepath).toEqual({ personality: 'Fresh personality' });
   });
 });

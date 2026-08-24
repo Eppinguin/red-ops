@@ -348,10 +348,6 @@ export interface CombatSummary {
 
 export type NpcSection = 'identity' | 'description' | 'stats' | 'skills' | 'cyberware' | 'weapons' | 'armor' | 'inventory' | 'loadout';
 
-export type NpcCommand =
-  | { type: 'set-stat'; stat: StatName; value: number }
-  | { type: 'set-skill'; skill: string; value: number };
-
 export interface GenerationRevision {
   section: NpcSection | 'edit';
   seed?: number;

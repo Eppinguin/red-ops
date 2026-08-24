@@ -1,4 +1,5 @@
 import { priceCategory } from '../engine/domain';
+import { CODE_GENERATED_ITEMS } from '../engine/generatedItems';
 import type { Catalog, ItemData, ItemQuality, ItemType, SkillData } from '../engine/types';
 import { UPSTREAM_COMMIT, UPSTREAM_REPOSITORY } from '../engine/catalog';
 import manualMappingFile from './manual-mappings.json';
@@ -264,6 +265,7 @@ export function buildGeneratorCatalog(catalog: Catalog): CatalogEntry[] {
     ...catalog.equipment,
     ...catalog.drugs,
     ...catalog.junk,
+    ...CODE_GENERATED_ITEMS,
   ];
   const entries = [
     ...items.map(generatorItemEntry),
