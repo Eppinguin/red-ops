@@ -36,6 +36,11 @@ function mechanicsFacts(entry: CatalogEntry): string[] {
     mechanics.linkedStat ?? '',
     mechanics.skillType ? pretty(mechanics.skillType) : '',
   ].filter(Boolean);
+  if (mechanics.kind === 'drug') return [
+    mechanics.duration ? `Lasts ${mechanics.duration}` : '',
+    mechanics.secondaryDv ? `Secondary DV ${mechanics.secondaryDv}` : '',
+    mechanics.usage ? pretty(mechanics.usage) : '',
+  ].filter(Boolean);
   return [
     mechanics.brand ?? '',
     mechanics.electronic ? 'Electronic' : '',

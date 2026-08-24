@@ -1,7 +1,7 @@
 {
   "manifest": {
     "schemaVersion": 1,
-    "generatedAt": "2026-07-27T12:04:39.166Z",
+    "generatedAt": "2026-08-24T06:31:32.820Z",
     "generator": {
       "repository": "n0lavar/cp_red_npc_generator",
       "commit": "dfd4c08c4295c3d34f11a6c75c4d3ae5792ef2a4"
@@ -12,7 +12,7 @@
       "ref": "v0.92.4",
       "commit": "75b8c9d7cb76ed1ea2797a3404ce77172d424b6b",
       "itemCount": 1073,
-      "contentHash": "450b7e0114ccfd88dd64157952044036ae0102c0dd87086cbbb176ba37f85234"
+      "contentHash": "1c583475a69cf439c2e8b3e090acaf55b420499d296450e6ee50d732836d0f75"
     },
     "entryCount": 1073,
     "conflictCount": 0
@@ -1118,13 +1118,9 @@
       "aliases": [],
       "summary": "If a target has started the natural healing process injecting them with Antibiotic will cause them to heal an additional 2 Hit Points per day for a week. This effect does not stack.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "activeEffects": []
       },
       "price": {
         "amount": 0
@@ -4281,13 +4277,26 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts for 10 Minutes. Induces a state of frenzy and increased aggression User takes no Bonus Damage for any Critical Injury Wound State/Facedown penalties to Skill or Stat checks are halved* Secondary Effect (DV17) When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . -2 Humanity Loss. User is now addicted to Berserker if not already addicted. +1 to Base Death Save Penalty while addicted. *This is not supported by the system and must be manually adjusted.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "primaryEffect": "Induces a state of frenzy and increased aggression User takes no Bonus Damage for any Critical Injury Wound State/Facedown penalties to Skill or Stat checks are halved*",
+        "secondaryEffect": "When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . -2 Humanity Loss. User is now addicted to Berserker if not already addicted. +1 to Base Death Save Penalty while addicted. *This is not supported by the system and must be manually adjusted.",
+        "secondaryDv": 17,
+        "duration": "10 Minutes",
+        "activeEffects": [
+          {
+            "id": "eBjRKSVNnIpbuFK5",
+            "name": "Berserker Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "bonuses.deathSavePenalty",
+                "mode": 2,
+                "value": "1"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 100
@@ -4637,13 +4646,39 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts 24 hours. The user rolls 2d6 Humanity Loss which is returned if they pass the Secondary Effect save The user ignores Seriously Wounded wound states for the duration Secondary Effect (DV17) When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . On Fail Humanity loss is not returned Unless experiencing the primary effect, REF -2",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Black Lace Primary",
+        "primaryEffect": "The user rolls 2d6 Humanity Loss which is returned if they pass the Secondary Effect save The user ignores Seriously Wounded wound states for the duration",
+        "secondaryEffect": "When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . On Fail Humanity loss is not returned Unless experiencing the primary effect, REF -2",
+        "secondaryDv": 17,
+        "duration": "24 hours",
+        "activeEffects": [
+          {
+            "id": "aNvneLolAXX4F6Rs",
+            "name": "Black Lace Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "bonuses.hasPainSuppression",
+                "mode": 5,
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "id": "L4P56fOWGjVT82ES",
+            "name": "Black Lace Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "system.stats.ref.value",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 50
@@ -4747,13 +4782,13 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts 4 hours. The GM may occasionally tell the user that they are seeing swirls of colours. When this happens the user loses their action on a single turn Secondary Effect (DV15) The GM may occasionally tell the user that they are seeing swirls of colours. When this happens the user loses their action on a single turn",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "primaryEffect": "The GM may occasionally tell the user that they are seeing swirls of colours. When this happens the user loses their action on a single turn",
+        "secondaryEffect": "The GM may occasionally tell the user that they are seeing swirls of colours. When this happens the user loses their action on a single turn",
+        "secondaryDv": 15,
+        "duration": "4 hours",
+        "activeEffects": []
       },
       "price": {
         "amount": 20
@@ -5333,13 +5368,39 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts 24 hours. The user has INT +2 for the duration Secondary Effect (DV17) INT -2",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Boost Primary",
+        "primaryEffect": "The user has INT +2 for the duration",
+        "secondaryEffect": "INT -2",
+        "secondaryDv": 17,
+        "duration": "24 hours",
+        "activeEffects": [
+          {
+            "id": "HkOd5iFmWn6v0bKK",
+            "name": "Boost Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "system.stats.int.value",
+                "mode": 2,
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "id": "ptnwPRaryJxNVOQf",
+            "name": "Boost Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "system.stats.int.value",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 50
@@ -36811,13 +36872,89 @@
       "aliases": [],
       "summary": "Looks like smash but it's smash with a lime flavor. And a lower risk of addiction. Primary Effect Dose lasts 4 hours. The user feels happy and satisfied, receiving a temporary modifier of +2 to the following skills Acting Dance Contortionist Conversation Human Perception Persuasion Secondary Effect (DV9) When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . If this fails, they take a -2 to the following skills Acting Dance Contortionist Conversation Human Perception Persuasion",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Piranha Smash Primary",
+        "primaryEffect": "The user feels happy and satisfied, receiving a temporary modifier of +2 to the following skills Acting Dance Contortionist Conversation Human Perception Persuasion",
+        "secondaryEffect": "When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . If this fails, they take a -2 to the following skills Acting Dance Contortionist Conversation Human Perception Persuasion",
+        "secondaryDv": 9,
+        "duration": "4 hours",
+        "activeEffects": [
+          {
+            "id": "Ns4hlbJVhX0j1thK",
+            "name": "Piranha Smash Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "bonuses.dance",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.contortionist",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.conversation",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.humanPerception",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.persuasion",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.acting",
+                "mode": 2,
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "id": "qSb9OyRqLojya1co",
+            "name": "Piranha Smash Addiciton",
+            "phase": "other",
+            "changes": [
+              {
+                "key": "bonuses.dance",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.contortionist",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.conversation",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.humanPerception",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.persuasion",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.acting",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 10
@@ -37799,13 +37936,44 @@
       "aliases": [],
       "summary": "Primary Effect Dose last 4 Hours. Sharpens focus and willpower at the cost of dampened emotions -4d6 Humanity until dose wears off* +2 to COOL and WILL stats. User's max HP not affected by the +2 WILL * Humanity can not fall under 0 from taking Prime Time Secondary (DV17) When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . -1 Humanity Loss -2 to COOL while addicted and not currently dosed with Prime Time.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Prime Time",
+        "primaryEffect": "Sharpens focus and willpower at the cost of dampened emotions -4d6 Humanity until dose wears off* +2 to COOL and WILL stats. User's max HP not affected by the +2 WILL * Humanity can not fall under 0 from taking Prime Time",
+        "secondaryEffect": "When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . -1 Humanity Loss -2 to COOL while addicted and not currently dosed with Prime Time.",
+        "secondaryDv": 17,
+        "duration": "4 Hours",
+        "activeEffects": [
+          {
+            "id": "1dgpY8OTKpsl4vq9",
+            "name": "Prime Time",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "system.stats.cool.value",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "system.stats.will.value",
+                "mode": 2,
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "id": "cDOJ0bvvt3q79G8y",
+            "name": "Prime Time Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "system.stats.cool.value",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 50
@@ -38866,13 +39034,9 @@
       "aliases": [],
       "summary": "Injecting a target with Rapidetox will eliminate the effects of any drugs, poisons, or intoxicants they are currently affected by.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "activeEffects": []
       },
       "price": {
         "amount": 0
@@ -41561,13 +41725,9 @@
       "aliases": [],
       "summary": "MedTech pharmaceutical. Applies the Unconscious condition for 4 hours on a willing target. +2 bonus to MechTech Surgery checks on targets dosed with Sedative. Unwilling target must make a DV15 Resist Torture/Drugs check. On failed check, target is unconscious for 1 minute or 20 rounds in combat. Target wakes upon taking damage. Others can use an Action to awaken target.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "activeEffects": []
       },
       "price": {
         "amount": 0
@@ -42825,13 +42985,71 @@
       "aliases": [],
       "summary": "Leave meatspace behind and supercharge your synapses. Primary Effect Dose lasts 4 hours. +2 to Speed while Netrunning -2 To MOVE (Minimum 1) -2 To REF to a (Minimum 1) User does not suffer the penalties of an Unsafe Jack Out unless forced to Jack Out by a program. User can burn 1 Humanity for 1 additional NET Action once per turn. Secondary (DV17) Unless under Primary Effect -2 to Speed while Netrunning",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Sixgun Primary",
+        "primaryEffect": "+2 to Speed while Netrunning -2 To MOVE (Minimum 1) -2 To REF to a (Minimum 1) User does not suffer the penalties of an Unsafe Jack Out unless forced to Jack Out by a program. User can burn 1 Humanity for 1 additional NET Action once per turn.",
+        "secondaryEffect": "Unless under Primary Effect -2 to Speed while Netrunning",
+        "secondaryDv": 17,
+        "duration": "4 hours",
+        "activeEffects": [
+          {
+            "id": "bSalB1is9PwUW4HE",
+            "name": "Sixgun Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "system.stats.move.value",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "system.stats.ref.value",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.speed",
+                "mode": 2,
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "id": "6eJSLpqij03VxIFa",
+            "name": "Sixgun Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "bonuses.speed",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          },
+          {
+            "id": "nvBX8WcPBua5cUWL",
+            "name": "Sixgun Addiction Primary",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "system.stats.move.value",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "system.stats.ref.value",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.speed",
+                "mode": 2,
+                "value": "4"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 100
@@ -43813,13 +44031,89 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts 4 hours. The user feels happy and satisfied, receiving a temporary modifier of +2 to the following skills Dance Contortionist Conversation Human Perception Persuasion Acting Secondary Effect (DV15) User is addicted to Smash. While addicted, user suffers a -2 modifier to the following skills Dance Contortionist Conversation Human Perception Persuasion Acting GM will tell your when you crave more Smash. Roleplay accordingly.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Smash Primary",
+        "primaryEffect": "The user feels happy and satisfied, receiving a temporary modifier of +2 to the following skills Dance Contortionist Conversation Human Perception Persuasion Acting",
+        "secondaryEffect": "User is addicted to Smash. While addicted, user suffers a -2 modifier to the following skills Dance Contortionist Conversation Human Perception Persuasion Acting GM will tell your when you crave more Smash. Roleplay accordingly.",
+        "secondaryDv": 15,
+        "duration": "4 hours",
+        "activeEffects": [
+          {
+            "id": "v688v2AQZUpGXV7t",
+            "name": "Smash Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "bonuses.acting",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.contortionist",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.conversation",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.dance",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.humanPerception",
+                "mode": 2,
+                "value": "2"
+              },
+              {
+                "key": "bonuses.persuasion",
+                "mode": 2,
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "id": "R7hdY2qZux5j9oVJ",
+            "name": "Smash Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "bonuses.acting",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.contortionist",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.conversation",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.dance",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.humanPerception",
+                "mode": 2,
+                "value": "-2"
+              },
+              {
+                "key": "bonuses.persuasion",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 10
@@ -44749,13 +45043,9 @@
       "aliases": [],
       "summary": "Injecting a target with Speedheal immediately causes them to heal HP equal to their BODY plus their WILL. This effect does not work on Mortally Wounded targets, and can only be used on a target once per day.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "activeEffects": []
       },
       "price": {
         "amount": 0
@@ -45812,13 +46102,23 @@
       "aliases": [],
       "summary": "Injecting a target with Stim causes them to ignore all penalties from being Seriously Wounded for one hour. It can only be used on a target once per day.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Stim",
+        "activeEffects": [
+          {
+            "id": "Tdev2grXyvKJvIhr",
+            "name": "Stim",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "bonuses.hasPainSuppression",
+                "mode": 5,
+                "value": "1"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 0
@@ -47009,13 +47309,9 @@
       "aliases": [],
       "summary": "Injecting a target with Surge causes them to be immune to sleep deprivation for 24 hours. It can only be used on a target once per week.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "toggled",
+        "activeEffects": []
       },
       "price": {
         "amount": 0
@@ -47491,13 +47787,51 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts 4 hours. +1 REF by 1 point for the duration The user feels paranoid occasionally Secondary Effect (DV15) -2 REF unless under the Primary Effect GM will tell you when when you crave more Synthcoke. Roleplay accordingly.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Synthcoke Primary",
+        "primaryEffect": "+1 REF by 1 point for the duration The user feels paranoid occasionally",
+        "secondaryEffect": "-2 REF unless under the Primary Effect GM will tell you when when you crave more Synthcoke. Roleplay accordingly.",
+        "secondaryDv": 15,
+        "duration": "4 hours",
+        "activeEffects": [
+          {
+            "id": "maW3KSp6yjC85oUn",
+            "name": "Synthcoke Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "system.stats.ref.value",
+                "mode": 2,
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "id": "9fYAbvg99knLYj9T",
+            "name": "Synthcoke Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "system.stats.ref.value",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          },
+          {
+            "id": "rw9YMhZaP2AQcYJw",
+            "name": "Synthcoke Addicted Primary",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "system.stats.ref.value",
+                "mode": 2,
+                "value": "3"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 20
@@ -48814,13 +49148,51 @@
       "aliases": [],
       "summary": "Primary Effect Dose lasts 1 minute. +3 to any Initiative Rolls. If already in combat, +3 to current Initiative. Secondary (DV17) When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . -2 to Initiative Rolls while addicted if not currently dosed with TimeWarp.",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Timewarp Primary",
+        "primaryEffect": "+3 to any Initiative Rolls. If already in combat, +3 to current Initiative.",
+        "secondaryEffect": "When the dose wears off, the user rolls WILL + Resist Torture/Drugs + 1d10 against Secondary DV . -2 to Initiative Rolls while addicted if not currently dosed with TimeWarp.",
+        "secondaryDv": 17,
+        "duration": "1 minute",
+        "activeEffects": [
+          {
+            "id": "LAZqZygBveSMgiOG",
+            "name": "Timewarp Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "bonuses.initiative",
+                "mode": 2,
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "id": "vehnLbHCsPpLEcaK",
+            "name": "Timewarp Addiction",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "bonuses.initiative",
+                "mode": 2,
+                "value": "-2"
+              }
+            ]
+          },
+          {
+            "id": "2UFkxrs6fI3cmpNz",
+            "name": "Timewarp Addiction Primary",
+            "phase": "secondary",
+            "changes": [
+              {
+                "key": "bonuses.initiative",
+                "mode": 2,
+                "value": "5"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 100
@@ -50526,13 +50898,48 @@
       "aliases": [],
       "summary": "Dose lasts 10 minutes. MedTech pharmaceutical. Target must make a DV17 Resist Torture/Drugs check. On failed check, target suffers -5 to Acting, Concentration, Conversation, Deduction, Human Perception, and Persuasion Checks",
       "mechanics": {
-        "kind": "generic",
-        "quantity": 1,
-        "installation": {
-          "allowedTypes": [],
-          "requiredContainers": [],
-          "requiredItems": []
-        }
+        "kind": "drug",
+        "usage": "snorted",
+        "consumedEffect": "Veritas Primary",
+        "activeEffects": [
+          {
+            "id": "oiotWhajDFYb5QQm",
+            "name": "Veritas Primary",
+            "phase": "primary",
+            "changes": [
+              {
+                "key": "bonuses.acting",
+                "mode": 2,
+                "value": "-5"
+              },
+              {
+                "key": "bonuses.concentration",
+                "mode": 2,
+                "value": "-5"
+              },
+              {
+                "key": "bonuses.conversation",
+                "mode": 2,
+                "value": "-5"
+              },
+              {
+                "key": "bonuses.deduction",
+                "mode": 2,
+                "value": "-5"
+              },
+              {
+                "key": "bonuses.humanPerception",
+                "mode": 2,
+                "value": "-5"
+              },
+              {
+                "key": "bonuses.persuasion",
+                "mode": 2,
+                "value": "-5"
+              }
+            ]
+          }
+        ]
       },
       "price": {
         "amount": 0

@@ -12,12 +12,13 @@ import {
   createCondition,
 } from '../encounter/conditions';
 import {
-  attackPenalty,
   calculateDamage,
   canDodgeRanged,
   combatantPenalty,
   createEmptyEncounter,
   deathSaveTarget,
+  effectiveCheckBase,
+  effectiveEvasionBase,
   encounterReducer,
   isSeriouslyWounded,
   sortCombatants,
@@ -30,6 +31,7 @@ import { randomEncounterBrief } from './RandomEncounterBuilder';
 import { AddCombatantsDrawer, type AddTab } from './AddCombatantsDrawer';
 import { useMediaQuery, useScrollLock } from './useScrollLock';
 import type { RandomEncounterResult } from '../encounter/randomEncounters';
+import { findCatalogEntry } from '../content/catalog';
 import type { CatalogEntry } from '../content/types';
 import type {
   ArmorLocation,
@@ -271,8 +273,8 @@ function DamageDialog({ combatant, onClose, dispatch }: {
 }
 
 function CyberwareList({ node, depth = 0 }: { node: InventoryNode; depth?: number }) {
-  return <>{node.children.map((child) => (
-    <div key={child.item.id} class="inspector-line" style={{ paddingLeft: `${depth * 12}px` }}>
+  return <>{node.children.map((child, index) => (
+    <div key={`${child.item.id}-${depth}-${index}`} class="inspector-line" style={{ paddingLeft: `${depth * 12}px` }}>
       <span>{child.item.name}</span><small>{child.item.container_capacity > 0 && child.item.container_capacity < 100 ? `${child.children.reduce((sum, item) => sum + item.item.size_in_container, 0)}/${child.item.container_capacity}` : ''}</small>
       {child.children.length > 0 && <CyberwareList node={child} depth={depth + 1} />}
     </div>
@@ -286,8 +288,7 @@ function AttackControls({ combatant, attack, dispatch, onResolve, compact = fals
   onResolve?: () => void;
   compact?: boolean;
 }) {
-  const penalty = attackPenalty(combatant, attack);
-  const effective = attack.base === null ? null : attack.base - penalty;
+  const effective = attack.base === null ? null : effectiveCheckBase(combatant, attack.skill, attack.base);
   const empty = attack.ammo.current === 0;
   const canReload = empty
     && attack.ammo.max !== null
@@ -337,6 +338,72 @@ function AttackControls({ combatant, attack, dispatch, onResolve, compact = fals
   );
 }
 
+function drugCondition(actionId: string, entry: CatalogEntry, phase: 'primary' | 'secondary'): EncounterCondition | undefined {
+  if (entry.mechanics.kind !== 'drug') return undefined;
+  const mechanics = entry.mechanics;
+  const activeEffect = mechanics.activeEffects.find((effect) => effect.phase === phase);
+  const notes = phase === 'primary' ? mechanics.primaryEffect : mechanics.secondaryEffect;
+  if (!notes && !activeEffect) return undefined;
+  return {
+    id: uiId('condition'),
+    name: `${entry.name} · ${phase}`,
+    penalty: 0,
+    notes: notes ?? `${activeEffect?.name ?? entry.name} is active.`,
+    duration: phase === 'primary' ? mechanics.duration : undefined,
+    sourceActionId: actionId,
+    phase,
+    secondaryDv: phase === 'primary' ? mechanics.secondaryDv : undefined,
+    secondaryEffect: phase === 'primary' ? mechanics.secondaryEffect : undefined,
+    modifiers: activeEffect?.changes.flatMap((change) => {
+      const value = Number(change.value);
+      return Number.isFinite(value) ? [{ key: change.key, value }] : [];
+    }) ?? [],
+  };
+}
+
+function ItemActionCard({ combatant, itemAction, entry, dispatch }: {
+  combatant: EncounterCombatant;
+  itemAction: EncounterCombatant['itemActions'][number];
+  entry: CatalogEntry | undefined;
+  dispatch: (action: EncounterAction) => void;
+}) {
+  const drug = entry?.mechanics.kind === 'drug' ? entry.mechanics : null;
+  const empty = itemAction.remaining === 0;
+  const canReset = itemAction.remaining !== null && itemAction.max !== null && itemAction.remaining < itemAction.max;
+  const primary = entry ? drugCondition(itemAction.id, entry, 'primary') : undefined;
+  return (
+    <article class={`item-action-card ${empty ? 'empty' : ''}`}>
+      <header>
+        <div><span>{itemAction.itemType}</span><strong>{itemAction.name}</strong></div>
+        <b>{itemAction.remaining === null ? 'Reusable' : `${itemAction.remaining}/${itemAction.max} doses`}</b>
+      </header>
+      {drug ? <>
+        <div class="item-action-facts">
+          {drug.usage && <span>{drug.usage}</span>}
+          {drug.duration && <span>{drug.duration}</span>}
+          {drug.secondaryDv && <span>Secondary DV {drug.secondaryDv}</span>}
+        </div>
+        {drug.primaryEffect && <p><strong>Primary</strong>{drug.primaryEffect}</p>}
+        {drug.secondaryEffect && <details><summary>Secondary effect</summary><p>{drug.secondaryEffect}</p></details>}
+      </> : <p>{entry?.summary ?? 'No structured Foundry rules were found for this action.'}</p>}
+      <footer class="item-action-controls">
+        <button
+          type="button"
+          class="primary-action item-use-button"
+          disabled={empty}
+          onClick={() => dispatch({ type: 'use-item-action', combatantId: combatant.id, actionId: itemAction.id, condition: primary })}
+        >{empty ? 'No doses remaining' : itemAction.remaining === null ? 'Use action' : 'Take dose · uses Action'}</button>
+        {canReset && <button
+          type="button"
+          class="item-reset-button"
+          title={`Restore ${itemAction.name} to ${itemAction.max} doses without ending active effects`}
+          onClick={() => dispatch({ type: 'reset-item-action', combatantId: combatant.id, actionId: itemAction.id })}
+        >Reset doses</button>}
+      </footer>
+    </article>
+  );
+}
+
 function CriticalInjuryCard({ injury, combatantId, dispatch }: {
   injury: CriticalInjury;
   combatantId: string;
@@ -360,8 +427,9 @@ function CriticalInjuryCard({ injury, combatantId, dispatch }: {
   );
 }
 
-function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveAttack }: {
+function CombatantInspector({ combatant, referenceEntries, dispatch, onClose, onDamage, onResolveAttack }: {
   combatant: EncounterCombatant;
+  referenceEntries: readonly CatalogEntry[];
   dispatch: (action: EncounterAction) => void;
   onClose: () => void;
   onDamage: () => void;
@@ -382,6 +450,10 @@ function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveA
   const sourceBlock = combatant.statBlock;
   const penalty = combatantPenalty(combatant);
   const target = deathSaveTarget(combatant);
+  const normalizedRuleName = (value: string) => value.replace(/[^a-z0-9]/gi, '').toLowerCase()
+  const resistBase = view?.skills.find((skill) => normalizedRuleName(skill.name) === 'resisttorturedrugs')?.total
+    ?? sourceBlock?.skills.find((skill) => normalizedRuleName(skill.name) === 'resisttorturedrugs')?.effective
+    ?? null;
 
   useEffect(() => {
     setCoverName(combatant.cover?.name ?? 'Hard cover');
@@ -476,11 +548,47 @@ function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveA
           ))}</div> : <p class="muted">No attacks recorded.</p>}
         </section>
 
+        {combatant.itemActions.length > 0 && <section>
+          <div class="section-title-row"><h3>Item actions</h3><span>Encounter-local uses</span></div>
+          <div class="item-action-list">{combatant.itemActions.map((itemAction) => {
+            const entry = findCatalogEntry(referenceEntries, { name: itemAction.name, type: itemAction.itemType as CatalogEntry['type'] });
+            return <ItemActionCard key={itemAction.id} combatant={combatant} itemAction={itemAction} entry={entry} dispatch={dispatch} />;
+          })}</div>
+        </section>}
+
         <section>
           <h3>Conditions</h3>
           <div class="condition-list">
             {isSeriouslyWounded(combatant) && <div class="condition-chip automatic" title={automaticStatusDescription('seriously wounded')}><strong>Seriously Wounded</strong><span>−2 to actions</span></div>}
-            {combatant.conditions.map((condition) => <div class="condition-chip" key={condition.id} title={conditionDescription(condition)}><div><strong>{condition.name}</strong><span>{condition.penalty ? `−${condition.penalty} · ` : ''}{conditionDescription(condition)}</span></div><button type="button" onClick={() => dispatch({ type: 'remove-condition', combatantId: combatant.id, conditionId: condition.id })}>×</button></div>)}
+            {combatant.conditions.map((condition) => {
+              const actionEntry = condition.sourceActionId
+                ? combatant.itemActions.find((itemAction) => itemAction.id === condition.sourceActionId)
+                : undefined;
+              const reference = actionEntry
+                ? findCatalogEntry(referenceEntries, { name: actionEntry.name, type: actionEntry.itemType as CatalogEntry['type'] })
+                : undefined;
+              const failureCondition = actionEntry && reference ? drugCondition(actionEntry.id, reference, 'secondary') : undefined;
+              const secondaryBase = resistBase === null ? null : effectiveCheckBase(combatant, 'Resist Torture/Drugs', resistBase);
+              return <div class={`condition-chip ${condition.phase ? 'item-effect' : ''}`} key={condition.id} title={conditionDescription(condition)}>
+                <div><strong>{condition.name}</strong><span>{condition.duration ? `${condition.duration} · ` : ''}{condition.penalty ? `−${condition.penalty} · ` : ''}{conditionDescription(condition)}</span></div>
+                <div class="condition-chip-actions">
+                  {condition.phase === 'primary' && condition.secondaryDv && <button
+                    type="button"
+                    disabled={secondaryBase === null}
+                    title={secondaryBase === null ? 'Resist Torture/Drugs is not recorded; resolve this save manually.' : `Roll Resist Torture/Drugs ${signed(secondaryBase)} vs DV ${condition.secondaryDv}`}
+                    onClick={() => secondaryBase !== null && dispatch({
+                      type: 'resolve-item-secondary',
+                      combatantId: combatant.id,
+                      conditionId: condition.id,
+                      base: secondaryBase,
+                      dv: condition.secondaryDv!,
+                      failureCondition,
+                    })}
+                  >End + save DV {condition.secondaryDv}</button>}
+                  <button type="button" onClick={() => dispatch({ type: 'remove-condition', combatantId: combatant.id, conditionId: condition.id })}>{condition.phase === 'primary' ? 'End' : '×'}</button>
+                </div>
+              </div>;
+            })}
           </div>
           <div class="inline-add compact-grid">
             <input aria-label="Condition name" placeholder="Prone, grappled…" value={conditionName} onInput={(event: InputEvent) => setConditionName(event.currentTarget.value)} />
@@ -556,7 +664,7 @@ function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveA
             <label><span>DEX + Evasion</span><CommitNumberInput value={combatant.evasionBase} nullable min={0} max={40} label={`${combatant.name} Evasion base`} onCommit={(evasionBase) => dispatch({ type: 'set-ranged-defense', combatantId: combatant.id, reflex: combatant.reflex, evasionBase })} /></label>
             <div class={`dodge-readiness ${canDodgeRanged(combatant) ? 'ready' : ''}`} title="A defender with REF 8+ may choose DEX + Evasion + RED d10 instead of the range-table DV.">
               <strong>{canDodgeRanged(combatant) ? 'Ranged dodge ready' : 'Uses range-table DV'}</strong>
-              <span>{canDodgeRanged(combatant) ? `Effective Evasion ${signed((combatant.evasionBase ?? 0) - penalty)}` : combatant.reflex !== null && combatant.reflex < 8 ? `REF ${combatant.reflex}; requires REF 8+` : 'Record REF and total Evasion base to enable.'}</span>
+              <span>{canDodgeRanged(combatant) ? `Effective Evasion ${signed(effectiveEvasionBase(combatant) ?? 0)}` : combatant.reflex !== null && combatant.reflex < 8 ? `REF ${combatant.reflex}; requires REF 8+` : 'Record REF and total Evasion base to enable.'}</span>
             </div>
           </div>
         </section>
@@ -565,14 +673,14 @@ function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveA
           <section>
             <h3>Stats</h3>
             <div class="inspector-stat-grid">{view.stats.map((stat) => {
-              const effective = stat.total - penalty;
+              const effective = effectiveCheckBase(combatant, stat.name, stat.total);
               return <button type="button" key={stat.name} title={`Roll ${stat.name}: RED d10 ${signed(effective)}${penalty ? ` after −${penalty} action penalty` : ''}`} onClick={() => dispatch({ type: 'roll-check', combatantId: combatant.id, label: stat.name, base: effective })}><span>{stat.name}</span><strong>{stat.total}</strong><small>ROLL {signed(effective)}</small></button>;
             })}</div>
           </section>
           <section>
             <h3>Skills</h3>
             <div class="inspector-skill-list">{[...view.skills].sort((a, b) => b.total - a.total).map((skill) => {
-              const effective = skill.total - penalty;
+              const effective = effectiveCheckBase(combatant, skill.name, skill.total);
               return <button type="button" key={skill.name} title={`Roll ${skill.name}: RED d10 ${signed(effective)}${penalty ? ` after −${penalty} action penalty` : ''}`} onClick={() => dispatch({ type: 'roll-check', combatantId: combatant.id, label: skill.name, base: effective })}><span>{skill.name}<small>{skill.link} + level</small></span><strong>{signed(effective)}</strong></button>;
             })}</div>
           </section>
@@ -594,14 +702,14 @@ function CombatantInspector({ combatant, dispatch, onClose, onDamage, onResolveA
               <button type="button" title={`Roll Combat Number: RED d10 ${signed(sourceBlock.combatNumber - penalty)}`} onClick={() => dispatch({ type: 'roll-check', combatantId: combatant.id, label: 'Combat Number', base: sourceBlock.combatNumber! - penalty })}>Roll</button>
             </div>}
             {sourceBlock.stats.length > 0 ? <div class="inspector-stat-grid">{sourceBlock.stats.map((stat) => {
-              const effective = stat.effective - penalty;
+              const effective = effectiveCheckBase(combatant, stat.name, stat.effective);
               return <button type="button" key={stat.name} title={`Roll ${stat.name}: RED d10 ${signed(effective)}${stat.base !== stat.effective ? `; printed ${stat.base} (${stat.effective})` : ''}${penalty ? ` after −${penalty} encounter penalty` : ''}`} onClick={() => dispatch({ type: 'roll-check', combatantId: combatant.id, label: stat.name, base: effective })}><span>{stat.name}</span><strong>{stat.base === stat.effective ? stat.base : `${stat.base} (${stat.effective})`}</strong><small>ROLL {signed(effective)}</small></button>;
             })}</div> : <p class="muted">This simplified official block does not include a complete STAT line. Initiative and unlisted STAT checks remain manual.</p>}
           </section>
           <section>
             <h3>Official skill bases</h3>
             <div class="inspector-skill-list">{[...sourceBlock.skills].sort((a, b) => b.effective - a.effective).map((skill) => {
-              const effective = skill.effective - penalty;
+              const effective = effectiveCheckBase(combatant, skill.name, skill.effective);
               return <button type="button" key={skill.name} title={`Roll ${skill.name}: RED d10 ${signed(effective)}${skill.base !== skill.effective ? `; printed ${skill.base} (${skill.effective})` : ''}${penalty ? ` after −${penalty} encounter penalty` : ''}`} onClick={() => dispatch({ type: 'roll-check', combatantId: combatant.id, label: skill.name, base: effective })}><span>{skill.name}<small>Combined source skill base</small></span><strong>{signed(effective)}</strong></button>;
             })}</div>
           </section>
@@ -742,11 +850,17 @@ function copyEncounter(source: EncounterState, name: string, lastEvent: string):
   const combatants = source.combatants.map((combatant) => {
     const newCombatantId = uiId(combatant.kind);
     combatantIds.set(combatant.id, newCombatantId);
+    const actionIds = new Map(combatant.itemActions.map((itemAction) => [itemAction.id, uiId('item-action')]));
     return {
       ...structuredClone(combatant),
       id: newCombatantId,
       attacks: combatant.attacks.map((attack) => ({ ...structuredClone(attack), id: uiId('attack') })),
-      conditions: combatant.conditions.map((condition) => ({ ...condition, id: uiId('condition') })),
+      itemActions: combatant.itemActions.map((itemAction) => ({ ...structuredClone(itemAction), id: actionIds.get(itemAction.id)! })),
+      conditions: combatant.conditions.map((condition) => ({
+        ...condition,
+        id: uiId('condition'),
+        sourceActionId: condition.sourceActionId ? actionIds.get(condition.sourceActionId) : undefined,
+      })),
       criticalInjuries: combatant.criticalInjuries.map((injury) => ({ ...injury, id: uiId('critical') })),
       createdAt: new Date().toISOString(),
     };
@@ -1021,7 +1135,7 @@ export function EncounterTracker({ currentNpc, savedNpcs, referenceEntries }: En
             inspector returns to being a side column. Tapping it closes, matching
             the other overlays. */}
         {selected && <div class="inspector-backdrop" role="presentation" onClick={() => setSelectedId(null)} />}
-        {selected && <CombatantInspector combatant={selected} dispatch={dispatch} onClose={() => setSelectedId(null)} onDamage={() => setDamageId(selected.id)} onResolveAttack={(attackId) => setAttackResolver({ combatantId: selected.id, attackId })} />}
+        {selected && <CombatantInspector combatant={selected} referenceEntries={referenceEntries} dispatch={dispatch} onClose={() => setSelectedId(null)} onDamage={() => setDamageId(selected.id)} onResolveAttack={(attackId) => setAttackResolver({ combatantId: selected.id, attackId })} />}
       </div>
       {addTab && <AddCombatantsDrawer
         currentNpc={currentNpc}

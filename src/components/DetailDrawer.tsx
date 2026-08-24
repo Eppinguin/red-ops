@@ -51,6 +51,17 @@ function Mechanics({ mechanics }: { mechanics: MechanicsSummary }) {
       <dt>Multiplier</dt><dd>{mechanics.multiplier ?? 1}</dd>
     </dl>;
   }
+  if (mechanics.kind === 'drug') {
+    return <>
+      <dl class="drawer-facts">
+        <dt>Use</dt><dd>{mechanics.usage ? pretty(mechanics.usage) : '—'}</dd>
+        <dt>Duration</dt><dd>{mechanics.duration ?? '—'}</dd>
+        <dt>Secondary DV</dt><dd>{mechanics.secondaryDv ?? '—'}</dd>
+      </dl>
+      {mechanics.primaryEffect && <div class="drawer-subsection"><h4>Primary effect</h4><p>{mechanics.primaryEffect}</p></div>}
+      {mechanics.secondaryEffect && <div class="drawer-subsection"><h4>Secondary effect</h4><p>{mechanics.secondaryEffect}</p></div>}
+    </>;
+  }
   return <dl class="drawer-facts">
     <dt>Brand</dt><dd>{mechanics.brand ?? '—'}</dd>
     <dt><GlossaryTerm id="Electronic" /></dt><dd>{mechanics.electronic === undefined ? 'Not specified' : mechanics.electronic ? 'Yes' : 'No'}</dd>

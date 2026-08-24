@@ -167,6 +167,9 @@ function itemMechanics(item: ItemData): MechanicsSummary {
       },
     };
   }
+  if (item.type === 'drug') {
+    return { kind: 'drug', activeEffects: [] };
+  }
   return {
     kind: 'generic',
     electronic: (item.tags ?? []).some((tag) => /electronic/i.test(tag)),
@@ -338,6 +341,18 @@ function mergeMechanics(generator: MechanicsSummary, foundry: MechanicsSummary):
       linkedStat: generator.linkedStat ?? foundry.linkedStat,
       skillType: generator.skillType ?? foundry.skillType,
       multiplier: generator.multiplier ?? foundry.multiplier,
+    };
+  }
+  if (generator.kind === 'drug' && foundry.kind === 'drug') {
+    return {
+      kind: 'drug',
+      usage: foundry.usage ?? generator.usage,
+      duration: foundry.duration ?? generator.duration,
+      primaryEffect: foundry.primaryEffect ?? generator.primaryEffect,
+      secondaryEffect: foundry.secondaryEffect ?? generator.secondaryEffect,
+      secondaryDv: foundry.secondaryDv ?? generator.secondaryDv,
+      consumedEffect: foundry.consumedEffect ?? generator.consumedEffect,
+      activeEffects: foundry.activeEffects.length ? foundry.activeEffects : generator.activeEffects,
     };
   }
   if (generator.kind === 'generic' && foundry.kind === 'generic') {

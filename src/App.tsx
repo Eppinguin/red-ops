@@ -973,7 +973,22 @@ export function App() {
                       ))}</div>
                   </article>}
 
-                  <article class="card"><header><h3>Actions</h3></header><div class="tags large">{sheet.actions.length ? sheet.actions.map((action, index) => <span key={`${action}-${index}`}>{action}</span>) : <em>None</em>}</div></article>
+                  <article class="card"><header><h3>Actions</h3><span>Open rules</span></header><div class="sheet-action-list">{sheet.actions.length ? sheet.actions.map((action, index) => {
+                    const reference = findCatalogEntry(entries, { name: action });
+                    const mechanics = reference?.mechanics.kind === 'drug' ? reference.mechanics : null;
+                    return <button
+                      type="button"
+                      class="sheet-action-card"
+                      key={`${action}-${index}`}
+                      disabled={!reference}
+                      onClick={() => reference && setSelectedReference({ entry: reference, reason: reasonFor(sheet, reference, action) })}
+                    >
+                      <strong>{action}</strong>
+                      <span>{mechanics?.duration ? `${mechanics.duration}` : reference?.type ?? 'Action'}</span>
+                      {mechanics?.secondaryDv && <b>DV {mechanics.secondaryDv}</b>}
+                      <small>{reference ? 'View effects →' : 'Rules unavailable'}</small>
+                    </button>;
+                  }) : <em>None</em>}</div></article>
                   <article class="card"><header><h3>Abilities</h3></header><div class="tags large">{sheet.abilities.length ? sheet.abilities.map((ability, index) => <span key={`${ability}-${index}`}>{ability}</span>) : <em>None</em>}</div></article>
 
                   <article class="card span-all revision-log">
