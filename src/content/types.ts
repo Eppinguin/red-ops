@@ -75,6 +75,30 @@ export interface SkillMechanics {
   multiplier?: number;
 }
 
+export interface DrugEffectChange {
+  key: string;
+  mode: number | string;
+  value: string;
+}
+
+export interface DrugActiveEffect {
+  id: string;
+  name: string;
+  phase: 'primary' | 'secondary' | 'other';
+  changes: DrugEffectChange[];
+}
+
+export interface DrugMechanics {
+  kind: 'drug';
+  usage?: string;
+  duration?: string;
+  primaryEffect?: string;
+  secondaryEffect?: string;
+  secondaryDv?: number;
+  consumedEffect?: string;
+  activeEffects: DrugActiveEffect[];
+}
+
 export interface GenericMechanics {
   kind: 'generic';
   electronic?: boolean;
@@ -88,6 +112,7 @@ export type MechanicsSummary =
   | ArmorMechanics
   | CyberwareMechanics
   | SkillMechanics
+  | DrugMechanics
   | GenericMechanics;
 
 export interface GeneratorMetadata {

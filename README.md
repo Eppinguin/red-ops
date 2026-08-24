@@ -8,8 +8,8 @@ No backend or Foundry module is required.
 
 - Generates NPCs with the upstream rules and RNG behavior.
 - Shows a searchable reference catalog with source-aware data.
-- Lets you edit stats, skills, gear, and loadouts.
-- Supports partial rerolls instead of forcing a full regeneration.
+- Edits any generated or hand-built NPC in place, with derived values previewed live.
+- Rerolls a single section or identity field instead of forcing a full regeneration.
 - Runs encounters with initiative order, damage, conditions, and undo.
 - Stores saved NPCs and active encounters in the browser.
 - Exports JSON, Markdown, printable sheets, and Foundry-friendly data.
@@ -87,9 +87,9 @@ Optional environment variables: `FOUNDRY_REF`, `FOUNDRY_COMMIT`, `GITLAB_TOKEN`,
 ```text
 src/
   App.tsx            Main UI
-  worker.ts          Generator, reroll, and edit boundary
+  worker.ts          Generator and reroll boundary
   storage.ts         IndexedDB persistence
-  components/        UI panels and dialogs
+  components/        UI panels, the NPC editor, and dialogs
   content/           Canonical catalog and glossary
   encounter/         Encounter state, rules, and storage
   engine/            Generator, RNG, formatting, and export logic

@@ -7,6 +7,7 @@ import {
   combatantPenalty,
   createEmptyEncounter,
   createPcCombatant,
+  effectCheckModifier,
   encounterReducer,
   isSeriouslyWounded,
   normalizeEncounter,
@@ -217,6 +218,81 @@ describe('encounter model', () => {
   it('does not allow a REF 7 defender to use ranged dodge', () => {
     const defender = { ...createPcCombatant({ name: 'Defender' }), reflex: 7, evasionBase: 14 };
     expect(canDodgeRanged(defender)).toBe(false);
+  });
+
+  it('uses a drug dose, applies its Foundry modifier, and resolves the secondary save', () => {
+    let state = createEmptyEncounter();
+    const pc = {
+      ...createPcCombatant({ name: 'User' }),
+      reflex: 7,
+      evasionBase: 12,
+      itemActions: [{ id: 'synthcoke', name: 'Synthcoke', itemType: 'drug', remaining: 1, max: 1 }],
+    };
+    state = encounterReducer(state, { type: 'add-combatant', combatant: pc });
+    state = encounterReducer(state, {
+      type: 'use-item-action',
+      combatantId: pc.id,
+      actionId: 'synthcoke',
+      condition: {
+        id: 'synth-primary',
+        name: 'Synthcoke · primary',
+        penalty: 0,
+        notes: '+1 REF',
+        sourceActionId: 'synthcoke',
+        phase: 'primary',
+        secondaryDv: 15,
+        modifiers: [{ key: 'system.stats.ref.value', value: 1 }],
+      },
+    });
+    expect(state.combatants[0]!.itemActions[0]!.remaining).toBe(0);
+    expect(effectCheckModifier(state.combatants[0]!, 'REF')).toBe(1);
+    expect(canDodgeRanged(state.combatants[0]!)).toBe(true);
+
+    state = encounterReducer(state, {
+      type: 'reset-item-action',
+      combatantId: pc.id,
+      actionId: 'synthcoke',
+    });
+    expect(state.combatants[0]!.itemActions[0]!.remaining).toBe(1);
+    expect(state.combatants[0]!.conditions.map((condition) => condition.id)).toEqual(['synth-primary']);
+    expect(state.lastEvent).toContain('doses reset to 1');
+
+    state = encounterReducer(state, {
+      type: 'resolve-item-secondary',
+      combatantId: pc.id,
+      conditionId: 'synth-primary',
+      base: 10,
+      dv: 15,
+      die: 4,
+      failureCondition: {
+        id: 'synth-secondary',
+        name: 'Synthcoke · secondary',
+        penalty: 0,
+        notes: '-2 REF',
+        sourceActionId: 'synthcoke',
+        phase: 'secondary',
+        modifiers: [{ key: 'system.stats.ref.value', value: -2 }],
+      },
+    });
+    expect(state.lastEvent).toContain('FAILED');
+    expect(state.combatants[0]!.conditions.map((condition) => condition.id)).toEqual(['synth-secondary']);
+    expect(effectCheckModifier(state.combatants[0]!, 'REF')).toBe(-2);
+  });
+
+  it('treats Foundry pain suppression as ignoring Seriously Wounded', () => {
+    const combatant = {
+      ...createPcCombatant({ name: 'Black Lace user', maxHp: 40 }),
+      currentHp: 10,
+      conditions: [{
+        id: 'black-lace',
+        name: 'Black Lace · primary',
+        penalty: 0,
+        notes: 'Pain suppression',
+        modifiers: [{ key: 'bonuses.hasPainSuppression', value: 1 }],
+      }],
+    };
+    expect(isSeriouslyWounded(combatant)).toBe(false);
+    expect(combatantPenalty(combatant)).toBe(0);
   });
 
   it('requires the attacker to beat the defense and remembers the selected range', () => {

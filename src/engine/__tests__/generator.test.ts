@@ -105,6 +105,19 @@ describe('generateNpc', () => {
     expect(first.npc.weapons.some((item) => item.name === 'Unarmed')).toBe(true);
   });
 
+  it('represents pocket money as an Eddies inventory stack', async () => {
+    const moneyCatalog = structuredClone(catalog);
+    moneyCatalog.ranks[0]!.pocket_money = { mean: 42, standard_deviation: 0 };
+
+    const result = await generateNpc(moneyCatalog, { ...options, allow_money: true });
+    const eddies = [...result.npc.inventory.values()].find((entry) => entry.item.name === 'Eddies');
+
+    expect(eddies).toMatchObject({
+      amount: 42,
+      item: { name: 'Eddies', type: 'junk', price: 1 },
+    });
+  });
+
   it('generates descriptions from Ollama without requiring an API key', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       choices: [{ message: { content: 'A watchful solo in a weathered coat.' } }],

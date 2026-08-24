@@ -1,5 +1,5 @@
 import type { TargetedEvent } from 'preact';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { findCatalogEntry, normalizeCatalogName } from './content/catalog';
 import type { CatalogConflict, CatalogEntry, ReferenceCatalogManifest } from './content/types';
 import { DetailDrawer, type SelectedReference } from './components/DetailDrawer';
@@ -7,14 +7,22 @@ import { GlossaryTerm } from './components/GlossaryTerm';
 import { ReferenceBrowser } from './components/ReferenceBrowser';
 import { NpcLibrary } from './components/NpcLibrary';
 import { EncounterTracker } from './components/EncounterTracker';
+import {
+  CyberwareEditor,
+  EditorActionBar,
+  GearEditor,
+  IdentityEditor,
+  RawNpcEditor,
+  SkillsEditor,
+  StatsEditor,
+} from './components/NpcEditor';
+import { useNpcEditor } from './components/useNpcEditor';
 import { getAllTags } from './engine/domain';
 import { createMarkdownExport, createNativeExport, parseNativeExport } from './engine/export';
 import { addNpcToActiveEncounter, loadEncounterWorkspace, persistEncounterWorkspace } from './encounter/storage';
 import type {
   GenerateOptions,
   GenerationRules,
-  NpcCommand,
-  NpcSection,
   GeneratedNpcView,
   InventoryNode,
   Item,
@@ -38,21 +46,8 @@ type WorkerMessage =
   | { type: 'boot-progress'; message: string; value: number }
   | { type: 'generation-progress'; progress: { stage: string; value: number } }
   | { type: 'ready'; meta: Meta }
-  | { type: 'result'; view: GeneratedNpcView; warning: string | null }
-  | { type: 'fatal' | 'generation-error'; error: string };
-
-
-const REROLL_SECTIONS: Array<{ section: NpcSection; title: string; description: string }> = [
-  { section: 'identity', title: 'Identity', description: 'Name, age, sex, nationality, and deterministic profile text.' },
-  { section: 'description', title: 'Description', description: 'Regenerate only the narrative description; AI is used only when configured.' },
-  { section: 'stats', title: 'Stats', description: 'Replace base stats while retaining the current skills and loadout.' },
-  { section: 'skills', title: 'Skills', description: 'Replace trained skill levels while retaining stats and equipment.' },
-  { section: 'cyberware', title: 'Cyberware', description: 'Replace the installation tree and recalculate all derived modifiers.' },
-  { section: 'weapons', title: 'Weapons + ammo', description: 'Replace weapons and their generated ammunition together.' },
-  { section: 'armor', title: 'Armor', description: 'Replace armor without changing the rest of the loadout.' },
-  { section: 'inventory', title: 'Inventory', description: 'Replace ammunition, equipment, drugs, money, and junk.' },
-  { section: 'loadout', title: 'Full loadout', description: 'Replace cyberware, armor, weapons, inventory, and Trauma Team status.' },
-];
+  | { type: 'result'; view: GeneratedNpcView; warning: string | null; requestId?: string }
+  | { type: 'fatal' | 'generation-error'; error: string; requestId?: string };
 
 const RULE_LABELS: Array<[Exclude<keyof GenerationRules, 'forbidden_skills' | 'allow_description'>, string]> = [
   ['allow_non_basic_ammo', 'Special ammo'],
@@ -70,23 +65,34 @@ const RULE_LABELS: Array<[Exclude<keyof GenerationRules, 'forbidden_skills' | 'a
   ['allow_lifepath', 'Lifepath'],
 ];
 
-const TABS = ['overview', 'combat', 'skills', 'cyberware', 'gear', 'refine', 'validation', 'text', 'exports'] as const;
+const TABS = ['overview', 'combat', 'skills', 'gear', 'export'] as const;
 const PAGES = ['generator', 'encounter', 'reference', 'library'] as const;
 type Tab = (typeof TABS)[number];
 type Page = (typeof PAGES)[number];
 const UI_STATE_KEY = 'red-ops.ui-state.v1';
 
+/** Tabs removed in the sheet rework still live in browsers' saved UI state. */
+const RETIRED_TABS: Record<string, Tab> = {
+  cyberware: 'gear',
+  refine: 'overview',
+  validation: 'overview',
+  text: 'export',
+  exports: 'export',
+};
+
 function loadUiState(): { page: Page; tab: Tab } {
   try {
     const parsed = JSON.parse(localStorage.getItem(UI_STATE_KEY) ?? '{}') as { page?: unknown; tab?: unknown };
+    const savedTab = typeof parsed.tab === 'string' ? parsed.tab : '';
     return {
       page: typeof parsed.page === 'string' && PAGES.includes(parsed.page as Page) ? parsed.page as Page : 'generator',
-      tab: typeof parsed.tab === 'string' && TABS.includes(parsed.tab as Tab) ? parsed.tab as Tab : 'overview',
+      tab: TABS.includes(savedTab as Tab) ? savedTab as Tab : RETIRED_TABS[savedTab] ?? 'overview',
     };
   } catch {
     return { page: 'generator', tab: 'overview' };
   }
 }
+
 type InputEvent = TargetedEvent<HTMLInputElement>;
 type SelectEvent = TargetedEvent<HTMLSelectElement>;
 
@@ -417,11 +423,15 @@ function EmptyState({
   status,
   progress,
   onImport,
+  onBuild,
+  canBuild,
 }: {
   busy: boolean;
   status: string;
   progress: number;
   onImport: () => void;
+  onBuild: () => void;
+  canBuild: boolean;
 }) {
   const pct = Math.round(progress * 100);
   return (
@@ -442,7 +452,10 @@ function EmptyState({
         <b>{pct}%</b>
         <span>{busy ? 'Establishing CitiNet link' : 'CitiNet link established'}</span>
       </div>
-      {!busy && <button type="button" onClick={onImport}>Import NPC</button>}
+      {!busy && <div class="empty-actions">
+        <button type="button" onClick={onImport}>Import NPC</button>
+        <button type="button" disabled={!canBuild} onClick={onBuild}>Build from blank</button>
+      </div>}
     </div>
   );
 }
@@ -455,6 +468,13 @@ export function App() {
   // scrolled into view. On a stacked phone layout the result sits below the
   // options panel, and without this the tap produced no visible change.
   const scrollToResultRef = useRef(false);
+  // Requests whose results belong to a caller rather than to the sheet, keyed by
+  // the id echoed back by the worker. Editor rerolls land here so an in-progress
+  // draft is never replaced by a worker message aimed at something else.
+  const pendingRequests = useRef(new Map<string, {
+    resolve: (view: GeneratedNpcView) => void;
+    reject: (error: Error) => void;
+  }>());
   const [meta, setMeta] = useState<Meta | null>(null);
   const [options, setOptions] = useState<GenerateOptions>(loadSavedOptions);
   const [view, setView] = useState<GeneratedNpcView | null>(null);
@@ -471,6 +491,9 @@ export function App() {
   const [selectedReference, setSelectedReference] = useState<SelectedReference | null>(null);
   const [savedNpcs, setSavedNpcs] = useState<SavedNpcRecord[]>([]);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  // Set while editing an NPC that came from the library, so applying updates
+  // that record instead of leaving the change only on screen.
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeId>(loadTheme);
 
   const changeTheme = (next: ThemeId) => {
@@ -486,16 +509,38 @@ export function App() {
       if (message.type === 'boot-progress') {
         setStatus(message.message);
         setProgress(message.value * 0.25);
-      } else if (message.type === 'ready') {
+        return;
+      }
+      if (message.type === 'ready') {
         setMeta(message.meta);
         setBusy(false);
         setProgress(1);
         setStatus('Ready.');
-      } else if (message.type === 'generation-progress') {
+        return;
+      }
+      if (message.type === 'generation-progress') {
         setBusy(true);
         setStatus(message.progress.stage);
         setProgress(message.progress.value);
-      } else if (message.type === 'result') {
+        return;
+      }
+
+      const pending = message.requestId ? pendingRequests.current.get(message.requestId) : undefined;
+      if (pending) {
+        pendingRequests.current.delete(message.requestId!);
+        setBusy(false);
+        setProgress(1);
+        if (message.type === 'result') {
+          setStatus('Section replaced in the draft.');
+          pending.resolve(message.view);
+        } else {
+          setStatus('Reroll failed.');
+          pending.reject(new Error(message.error));
+        }
+        return;
+      }
+
+      if (message.type === 'result') {
         setView(message.view);
         setWarning(message.warning);
         setBusy(false);
@@ -506,7 +551,11 @@ export function App() {
         setBusy(false);
       }
     };
-    return () => worker.terminate();
+    return () => {
+      worker.terminate();
+      for (const pending of pendingRequests.current.values()) pending.reject(new Error('The generator stopped.'));
+      pendingRequests.current.clear();
+    };
   }, []);
 
   useEffect(() => {
@@ -540,29 +589,80 @@ export function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  const entries = meta?.referenceEntries ?? [];
+
+  /** Sends a worker request whose result is returned to the caller. */
+  const requestReroll = useCallback((message: object) => new Promise<GeneratedNpcView>((resolve, reject) => {
+    const worker = workerRef.current;
+    if (!worker) {
+      reject(new Error('The generator is not ready yet.'));
+      return;
+    }
+    const requestId = crypto.randomUUID();
+    pendingRequests.current.set(requestId, { resolve, reject });
+    setBusy(true);
+    setProgress(0);
+    worker.postMessage({ ...message, requestId });
+  }), []);
+
+  const applyEditedNpc = useCallback((edited: GeneratedNpcView) => {
+    setView(edited);
+    setWarning(null);
+    setStatus(`Applied changes to ${edited.npc.name} ${edited.npc.surname}.`);
+    if (!editingRecordId) return;
+    setEditingRecordId(null);
+    void saveNpc(edited, editingRecordId)
+      .then((saved) => {
+        setSavedNpcs((current) => current.map((record) => record.id === saved.id ? saved : record));
+        setLibraryError(null);
+        setStatus(`Updated ${saved.label} in the local library.`);
+      })
+      .catch((error: unknown) => setLibraryError(error instanceof Error ? error.message : String(error)));
+  }, [editingRecordId]);
+
+  const restoreEditedNpc = useCallback((restored: GeneratedNpcView | null) => {
+    setEditingRecordId(null);
+    if (restored) {
+      setView(restored);
+      setStatus('Edit discarded.');
+      return;
+    }
+    setStatus('Manual NPC discarded.');
+  }, []);
+
+  const editor = useNpcEditor({
+    referenceEntries: entries,
+    requestReroll,
+    onApply: applyEditedNpc,
+    onCancel: restoreEditedNpc,
+  });
+
+  // The draft is what the sheet renders while editing, so every derived panel,
+  // export and print view previews the pending change without extra plumbing.
+  const sheet = editor.draft ?? view;
+
   // Reveal a freshly generated operative on the stacked layout, where the result
   // panel starts off-screen. Above that width the two columns are both visible,
   // so scrolling would only yank the page out from under the user.
   useEffect(() => {
-    if (!view || busy || !scrollToResultRef.current) return;
+    if (!sheet || busy || !scrollToResultRef.current) return;
     scrollToResultRef.current = false;
     if (page !== 'generator') return;
     if (!window.matchMedia('(max-width: 1120px)').matches) return;
     resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [view, busy, page]);
+  }, [sheet, busy, page]);
 
-  const entries = meta?.referenceEntries ?? [];
   const filteredSkills = useMemo(() => {
-    if (!view) return [];
+    if (!sheet) return [];
     const query = skillSearch.trim().toLowerCase();
-    return view.skills.filter((skill) =>
+    return sheet.skills.filter((skill) =>
       (!trainedOnly || skill.base + skill.modifier > 0) &&
       (!query || skill.name.toLowerCase().includes(query) || skill.type.includes(query)),
     );
-  }, [view, skillSearch, trainedOnly]);
+  }, [sheet, skillSearch, trainedOnly]);
 
   const generate = () => {
-    if (!meta || busy) return;
+    if (!meta || busy || editor.editing) return;
     scrollToResultRef.current = true;
     setBusy(true);
     setFatal(null);
@@ -576,27 +676,22 @@ export function App() {
     setOptions((current) => ({ ...current, [key]: value }));
   };
 
-  const reroll = (section: NpcSection) => {
-    if (!view || !meta || busy) return;
-    const randomSeed = new Uint32Array(1);
-    crypto.getRandomValues(randomSeed);
-    const seed = randomSeed[0] || 1;
-    scrollToResultRef.current = true;
-    setBusy(true);
-    setFatal(null);
-    setWarning(null);
-    setProgress(0);
-    setStatus(`Rerolling ${section}…`);
-    workerRef.current?.postMessage({ type: 'reroll', current: view, options, section, seed });
+  const openEditor = () => {
+    if (!view || busy) return;
+    setEditingRecordId(null);
+    setStatus('Editing this operative. Nothing is committed until you apply.');
+    void editor.open(view);
   };
 
-  const editNpc = (command: NpcCommand) => {
-    if (!view || !meta || busy) return;
-    setBusy(true);
+  const buildFromBlank = () => {
+    if (busy || editor.editing) return;
+    setEditingRecordId(null);
     setFatal(null);
-    setProgress(0.9);
-    setStatus('Applying NPC edit…');
-    workerRef.current?.postMessage({ type: 'edit', current: view, command });
+    setWarning(null);
+    setPage('generator');
+    setTab('overview');
+    setStatus('Building a new operative from a blank sheet.');
+    void editor.openBlank();
   };
 
   // The print stylesheet swaps the tabbed screen UI for the always-rendered
@@ -604,9 +699,9 @@ export function App() {
   const printNpc = () => window.print();
 
   const saveCurrentNpc = async () => {
-    if (!view) return;
+    if (!sheet) return;
     try {
-      const record = await saveNpc(view);
+      const record = await saveNpc(sheet);
       setSavedNpcs((current) => [record, ...current]);
       setLibraryError(null);
       setStatus('Operative saved to the local library.');
@@ -624,6 +719,17 @@ export function App() {
     setStatus(`Loaded ${record.label} from the local library.`);
   };
 
+  const editSavedNpc = (record: SavedNpcRecord) => {
+    setView(record.view);
+    setWarning(null);
+    setFatal(null);
+    setPage('generator');
+    setTab('overview');
+    setEditingRecordId(record.id);
+    setStatus(`Editing ${record.label}. Applying updates the saved record.`);
+    void editor.open(record.view);
+  };
+
   const removeSavedNpc = async (record: SavedNpcRecord) => {
     try {
       await deleteSavedNpc(record.id);
@@ -634,11 +740,11 @@ export function App() {
   };
 
   const addCurrentNpcToEncounter = () => {
-    if (!view) return;
-    const workspace = addNpcToActiveEncounter(loadEncounterWorkspace(), view);
+    if (!sheet) return;
+    const workspace = addNpcToActiveEncounter(loadEncounterWorkspace(), sheet);
     persistEncounterWorkspace(workspace);
     const encounter = workspace.encounters.find((candidate) => candidate.id === workspace.activeEncounterId);
-    setStatus(`Added ${view.npc.name} ${view.npc.surname} to ${encounter?.name ?? 'the active encounter'}.`);
+    setStatus(`Added ${sheet.npc.name} ${sheet.npc.surname} to ${encounter?.name ?? 'the active encounter'}.`);
     setPage('encounter');
   };
 
@@ -662,12 +768,20 @@ export function App() {
     }
   };
 
-  const foundryJson = view ? JSON.stringify(view.foundry, null, 2) : '';
-  const nativeJson = view ? JSON.stringify(createNativeExport(view), null, 2) : '';
-  const markdown = view ? createMarkdownExport(view) : '';
-  const filename = view ? `${view.npc.name}-${view.npc.surname}`.replace(/[^a-z0-9-]+/gi, '-').toLowerCase() : 'npc';
-  const errorCount = view?.validation.filter((issue) => issue.severity === 'error').length ?? 0;
-  const warningCount = view?.validation.filter((issue) => issue.severity === 'warning').length ?? 0;
+  const foundryJson = sheet ? JSON.stringify(sheet.foundry, null, 2) : '';
+  const nativeJson = sheet ? JSON.stringify(createNativeExport(sheet), null, 2) : '';
+  const markdown = sheet ? createMarkdownExport(sheet) : '';
+  const filename = sheet ? `${sheet.npc.name}-${sheet.npc.surname}`.replace(/[^a-z0-9-]+/gi, '-').toLowerCase() : 'npc';
+  // Informational findings are content-maintenance diagnostics. Keep them on
+  // the generated view for native exports, but only surface issues the GM can
+  // act on here.
+  const characterIssues = sheet?.validation.filter((issue) => issue.severity !== 'info') ?? [];
+  const errorCount = characterIssues.filter((issue) => issue.severity === 'error').length;
+  const warningCount = characterIssues.filter((issue) => issue.severity === 'warning').length;
+  const checkState = errorCount ? 'has-errors' : warningCount ? 'has-warnings' : 'valid';
+  const checkLabel = errorCount
+    ? `${errorCount} ${errorCount === 1 ? 'error' : 'errors'}`
+    : `${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}`;
   const aiConfigurationIssue = options.allow_description
     ? !options.model_id
       ? 'Enter a model ID to generate an AI description.'
@@ -677,7 +791,7 @@ export function App() {
     : null;
 
   return (
-    <main class={`shell page-${page}`}>
+    <main class={`shell page-${page}${editor.editing ? ' is-editing' : ''}`}>
       <header class="topbar panel">
         <div class="brand-mark">R//</div>
         <div class="brand-copy">
@@ -685,10 +799,14 @@ export function App() {
           <p>Cyberpunk RED NPC generator and encounter runner</p>
         </div>
         <nav class="primary-nav" aria-label="Primary">
-          <button class={page === 'generator' ? 'active' : ''} onClick={() => setPage('generator')}><span class="nav-key">01</span><span>Generator</span></button>
-          <button class={page === 'encounter' ? 'active' : ''} onClick={() => setPage('encounter')}><span class="nav-key">02</span><span>Encounter</span></button>
-          <button class={page === 'reference' ? 'active' : ''} onClick={() => setPage('reference')}><span class="nav-key">03</span><span>Reference</span></button>
-          <button class={page === 'library' ? 'active' : ''} onClick={() => setPage('library')}><span class="nav-key">04</span><span>Library</span></button>
+          {PAGES.map((name, index) => (
+            <button
+              key={name}
+              class={page === name ? 'active' : ''}
+              disabled={editor.editing && name !== 'generator'}
+              onClick={() => setPage(name)}
+            ><span class="nav-key">{String(index + 1).padStart(2, '0')}</span><span>{pretty(name)}</span></button>
+          ))}
         </nav>
         <div class="topbar-utilities">
           <ThemePicker theme={theme} onChange={changeTheme} />
@@ -700,14 +818,22 @@ export function App() {
       </header>
 
       {page === 'encounter' ? (
-        <EncounterTracker currentNpc={view} savedNpcs={savedNpcs} referenceEntries={entries} />
+        <EncounterTracker currentNpc={sheet} savedNpcs={savedNpcs} referenceEntries={entries} />
       ) : page === 'reference' ? (
         <ReferenceBrowser entries={entries} manifest={meta?.referenceManifest ?? null} onSelect={(entry) => setSelectedReference({ entry })} />
       ) : page === 'library' ? (
-        <NpcLibrary records={savedNpcs} error={libraryError} onOpen={openSavedNpc} onDelete={(record) => void removeSavedNpc(record)} />
+        <NpcLibrary
+          records={savedNpcs}
+          error={libraryError}
+          busy={editor.opening}
+          onOpen={openSavedNpc}
+          onEdit={editSavedNpc}
+          onCreate={buildFromBlank}
+          onDelete={(record) => void removeSavedNpc(record)}
+        />
       ) : (
         <div class="layout">
-          <aside class="controls panel">
+          <aside class="controls panel" inert={editor.editing}>
             <div class="panel-heading"><h2>Generator matrix</h2><span>01</span></div>
             <div class="control-body">
               <div class="field-grid">
@@ -749,75 +875,145 @@ export function App() {
               </details>
 
               <label class="toggle standalone"><span>Simplified text layout</span><input type="checkbox" checked={options.flat} onChange={(event: InputEvent) => update('flat', event.currentTarget.checked)} /><i /></label>
-              <button class="generate" type="button" disabled={!meta || busy} onClick={generate}>{busy ? 'Fabricating…' : 'Generate NPC'}</button>
+              <button class="generate" type="button" disabled={!meta || busy || editor.editing} onClick={generate}>{busy ? 'Fabricating…' : 'Generate NPC'}</button>
+              <button class="build-blank" type="button" disabled={!meta || busy || editor.editing} onClick={buildFromBlank}>Build from blank</button>
             </div>
           </aside>
 
           <section class="workspace" ref={resultRef}>
             {fatal && <div class="fatal panel"><strong>Engine fault</strong><pre>{fatal}</pre></div>}
-            {!view && !fatal && <EmptyState busy={busy} status={status} progress={progress} onImport={() => importNpcInput.current?.click()} />}
-            {view && (
-              <div class="result panel">
-                <section class="hero">
-                  <div class="hero-copy">
-                    <span class="kicker">{pretty(view.rank.name)} · {pretty(view.role.name)}</span>
-                    <h2>{view.npc.name} {view.npc.surname}</h2>
+            {!sheet && !fatal && <EmptyState
+              busy={busy}
+              status={status}
+              progress={progress}
+              canBuild={Boolean(meta) && !editor.opening}
+              onImport={() => importNpcInput.current?.click()}
+              onBuild={buildFromBlank}
+            />}
+            {sheet && (
+              <div class="sheet panel">
+                <header class="sheet-head">
+                  <div class="sheet-title">
+                    <span class="kicker">{pretty(sheet.rank.name)} · {pretty(sheet.role.name)}</span>
+                    <h2>{sheet.npc.name} {sheet.npc.surname}</h2>
                     <div class="chips">
-                      <span>{view.npc.sex ? 'Male' : 'Female'}</span><span>{view.npc.nationality}</span><span>{view.npc.age} yo</span>
-                      <span>Seed {view.seed}</span><span>{view.totalPrice}eb loadout</span><span>Trauma Team {view.npc.traumaTeamStatus}</span>
+                      <span>{sheet.npc.sex ? 'Male' : 'Female'}</span>
+                      <span>{sheet.npc.nationality}</span>
+                      <span>{sheet.npc.age} yo</span>
+                      <span>Trauma Team {pretty(sheet.npc.traumaTeamStatus.toLowerCase())}</span>
+                      <span>{sheet.totalPrice}eb loadout</span>
+                      <span>Seed {sheet.seed}</span>
                     </div>
-                    <p class="description">{view.profileSummary}</p>
-                    {warning && <p class="warning">{warning}</p>}
                   </div>
-                  <div class="hero-actions">
-                    <button class="primary-action" onClick={addCurrentNpcToEncounter}>Add to encounter</button>
-                    <button onClick={() => void saveCurrentNpc()}>Save</button>
-                    <button onClick={() => setTab('exports')}>Export</button>
-                    <button onClick={() => importNpcInput.current?.click()}>Import</button>
+                  <div class="sheet-actions">
+                    {editor.editing ? (
+                      <span class="sheet-editing-badge">Editing draft</span>
+                    ) : <>
+                      <button type="button" class="primary-action" disabled={busy || editor.opening} onClick={openEditor}>{editor.opening ? 'Loading editor…' : 'Edit NPC'}</button>
+                      <button type="button" onClick={addCurrentNpcToEncounter}>Add to encounter</button>
+                      <button type="button" onClick={() => void saveCurrentNpc()}>Save</button>
+                      <button type="button" onClick={() => setTab('export')}>Export</button>
+                      <button type="button" onClick={() => importNpcInput.current?.click()}>Import</button>
+                    </>}
                   </div>
-                </section>
+                </header>
+
+                {/* The numbers a GM reaches for mid-scene stay visible on every
+                    tab instead of living inside one of them. */}
+                <dl class={`sheet-vitals${characterIssues.length ? ' has-character-issues' : ''}`}>
+                  <div><dt><GlossaryTerm id="HP">HP</GlossaryTerm></dt><dd>{sheet.combat.hitPoints}</dd></div>
+                  <div><dt>Seriously Wounded</dt><dd>{sheet.hp.painEditor ? 'Pain Editor' : sheet.combat.seriouslyWounded ?? '—'}</dd></div>
+                  <div><dt>Initiative</dt><dd>+{sheet.combat.initiative}</dd></div>
+                  <div><dt>Death Save</dt><dd>{sheet.combat.deathSave}</dd></div>
+                  {characterIssues.length > 0 && <div class={`sheet-check ${checkState}`}><dt>Character check</dt><dd>
+                    <button type="button" onClick={() => setTab('overview')}>{checkLabel}</button>
+                  </dd></div>}
+                </dl>
+
+                {(sheet.profileSummary || warning || editor.error) && <div class="sheet-brief">
+                  {sheet.profileSummary && <p class="description">{sheet.profileSummary}</p>}
+                  {warning && <p class="warning">{warning}</p>}
+                  {editor.error && !editor.editing && <p class="warning" role="alert">{editor.error}</p>}
+                </div>}
 
                 <nav class="tabs">
                   {TABS.map((name) => <button key={name} class={tab === name ? 'active' : ''} onClick={() => setTab(name)}>{pretty(name)}</button>)}
                 </nav>
 
-                <PrintSheet view={view} />
+                <PrintSheet view={sheet} />
 
                 {tab === 'overview' && <section class="tab-content overview-grid">
-                  <article class="card wide"><header><h3>Stats</h3><span>base + modifiers</span></header><div class="stats-grid">
-                    {view.stats.map((stat) => <div key={stat.name} class="stat"><span>{stat.name}</span><strong>{stat.total}</strong><small>{stat.modifier ? `${stat.base} ${stat.modifier >= 0 ? '+' : ''}${stat.modifier}` : `base ${stat.base}`}</small></div>)}
-                  </div></article>
-                  <article class="card"><header><h3>Combat state</h3></header><div class="metrics">
-                    <div><span><GlossaryTerm id="HP">HP</GlossaryTerm></span><strong>{view.combat.hitPoints}</strong><small>{view.hp.painEditor ? 'Pain Editor' : `Seriously wounded ${view.combat.seriouslyWounded}`}</small></div>
-                    <div><span>Initiative</span><strong>+{view.combat.initiative}</strong><small><GlossaryTerm id="REF">REF</GlossaryTerm> total</small></div>
-                    <div><span>Death Save</span><strong>{view.combat.deathSave}</strong><small><GlossaryTerm id="BODY">BODY</GlossaryTerm> total</small></div>
-                  </div></article>
-                  <article class="card"><header><h3>Character check</h3><span>{errorCount ? `${errorCount} errors` : warningCount ? `${warningCount} warnings` : 'valid'}</span></header>
-                    <div class={`validation-summary ${errorCount ? 'has-errors' : warningCount ? 'has-warnings' : 'valid'}`}>
-                      <strong>{errorCount ? 'Needs correction' : warningCount ? 'Review suggested' : 'Ready to use'}</strong>
-                      <p>{view.validation[0]?.message ?? 'This NPC is ready for your game.'}</p>
-                      <button type="button" onClick={() => setTab('validation')}>View checks</button>
+                  {editor.editing && editor.catalog && <>
+                    <div class="span-all"><IdentityEditor view={sheet} editor={editor} catalog={editor.catalog} /></div>
+                    <div class="span-all"><StatsEditor view={sheet} editor={editor} /></div>
+                  </>}
+
+                  {!editor.editing && <article class="card span-all">
+                    <header><h3>Stats</h3><span>base + modifiers</span></header>
+                    <div class="stats-grid">
+                      {sheet.stats.map((stat) => <div key={stat.name} class="stat">
+                        <span>{stat.name}</span>
+                        <strong>{stat.total}</strong>
+                        <small>{stat.modifier ? `${stat.base} ${stat.modifier >= 0 ? '+' : ''}${stat.modifier}` : `base ${stat.base}`}</small>
+                      </div>)}
                     </div>
-                  </article>
+                  </article>}
+
                   <article class="card"><header><h3>Conditions</h3></header><div class="conditions">
-                    {view.conditions.map((condition) => <div key={condition.label} class={condition.value ? 'ok' : ''}><i>{condition.value ? '✓' : '×'}</i><span>{condition.label}<small>{condition.source ?? 'Not available'}</small></span></div>)}
+                    {sheet.conditions.map((condition) => <div key={condition.label} class={condition.value ? 'ok' : ''}><i>{condition.value ? '✓' : '×'}</i><span>{condition.label}<small>{condition.source ?? 'Not available'}</small></span></div>)}
                   </div></article>
-                  <article class="card"><header><h3>Actions</h3></header><div class="tags large">{view.actions.length ? view.actions.map((action, index) => <span key={`${action}-${index}`}>{action}</span>) : <em>None</em>}</div></article>
-                  <article class="card"><header><h3>Abilities</h3></header><div class="tags large">{view.abilities.length ? view.abilities.map((ability, index) => <span key={`${ability}-${index}`}>{ability}</span>) : <em>None</em>}</div></article>
+
+                  {characterIssues.length > 0 && <article class={`card validation-card ${checkState}`}>
+                    <header><h3>Character check</h3><span>{checkLabel}</span></header>
+                    <div class="validation-list">{characterIssues.map((issue, index) => (
+                        <article key={`${issue.code}-${issue.subject}-${index}`} class={`validation-issue ${issue.severity}`}>
+                          <span>{issue.severity}</span>
+                          <div><strong>{issue.subject ?? issue.code}</strong><p>{issue.message}</p>{issue.suggestedAction && <small>{issue.suggestedAction}</small>}</div>
+                        </article>
+                      ))}</div>
+                  </article>}
+
+                  <article class="card"><header><h3>Actions</h3><span>Open rules</span></header><div class="sheet-action-list">{sheet.actions.length ? sheet.actions.map((action, index) => {
+                    const reference = findCatalogEntry(entries, { name: action });
+                    const mechanics = reference?.mechanics.kind === 'drug' ? reference.mechanics : null;
+                    return <button
+                      type="button"
+                      class="sheet-action-card"
+                      key={`${action}-${index}`}
+                      disabled={!reference}
+                      onClick={() => reference && setSelectedReference({ entry: reference, reason: reasonFor(sheet, reference, action) })}
+                    >
+                      <strong>{action}</strong>
+                      <span>{mechanics?.duration ? `${mechanics.duration}` : reference?.type ?? 'Action'}</span>
+                      {mechanics?.secondaryDv && <b>DV {mechanics.secondaryDv}</b>}
+                      <small>{reference ? 'View effects →' : 'Rules unavailable'}</small>
+                    </button>;
+                  }) : <em>None</em>}</div></article>
+                  <article class="card"><header><h3>Abilities</h3></header><div class="tags large">{sheet.abilities.length ? sheet.abilities.map((ability, index) => <span key={`${ability}-${index}`}>{ability}</span>) : <em>None</em>}</div></article>
+
+                  <article class="card span-all revision-log">
+                    <header><h3>Change history</h3><span>{sheet.revisions.length} entries</span></header>
+                    {sheet.revisions.length
+                      ? <ol>{[...sheet.revisions].reverse().map((revision, index) => (
+                        <li key={`${revision.createdAt}-${index}`}>
+                          <strong>{pretty(revision.section)}</strong>
+                          <span>{revision.seed !== undefined ? `variation ${revision.seed}` : revision.command}</span>
+                          <time>{new Date(revision.createdAt).toLocaleString()}</time>
+                        </li>
+                      ))}</ol>
+                      : <p class="muted">No rerolls or manual changes yet.</p>}
+                  </article>
+
+                  {editor.editing && <div class="span-all"><RawNpcEditor view={sheet} editor={editor} /></div>}
                 </section>}
 
                 {tab === 'combat' && <section class="tab-content combat-layout">
-                  <div class="combat-metrics">
-                    <article><span><GlossaryTerm id="HP">HP</GlossaryTerm></span><strong>{view.combat.hitPoints}</strong></article>
-                    <article><span>Seriously Wounded</span><strong>{view.combat.seriouslyWounded ?? 'No'}</strong></article>
-                    <article><span>Initiative</span><strong>+{view.combat.initiative}</strong></article>
-                    <article><span>Death Save</span><strong>{view.combat.deathSave}</strong></article>
-                  </div>
-                  <article class="combat-section"><h3>Armor</h3><div class="combat-list">{view.combat.armor.length ? view.combat.armor.map((armor) => <div key={armor.name}><strong>{armor.name}</strong><span><GlossaryTerm id="SP">SP</GlossaryTerm> {armor.stoppingPower ?? '—'}</span></div>) : <p class="muted">No armor equipped.</p>}</div></article>
-                  <article class="combat-section"><h3>Attacks</h3><div class="attack-grid">{view.combat.attacks.map((attack) => {
-                    const item = view.npc.weapons.find((weapon) => weapon.name === attack.name);
+                  {editor.editing && <p class="editor-note">Combat values are derived. Change stats, weapons, armor, or cyberware and they update here.</p>}
+                  <article class="combat-section"><h3>Armor</h3><div class="combat-list">{sheet.combat.armor.length ? sheet.combat.armor.map((armor) => <div key={armor.name}><strong>{armor.name}</strong><span><GlossaryTerm id="SP">SP</GlossaryTerm> {armor.stoppingPower ?? '—'}</span></div>) : <p class="muted">No armor equipped.</p>}</div></article>
+                  <article class="combat-section"><h3>Attacks</h3><div class="attack-grid">{sheet.combat.attacks.length ? sheet.combat.attacks.map((attack) => {
+                    const item = sheet.npc.weapons.find((weapon) => weapon.name === attack.name);
                     const reference = item ? findCatalogEntry(entries, { name: item.name, type: item.type, quality: item.quality }) : undefined;
-                    return <button key={attack.name} type="button" class="attack-card" disabled={!reference} onClick={() => reference && setSelectedReference({ entry: reference, reason: reasonFor(view, reference, attack.name) })}>
+                    return <button key={attack.name} type="button" class="attack-card" disabled={!reference} onClick={() => reference && setSelectedReference({ entry: reference, reason: reasonFor(sheet, reference, attack.name) })}>
                       <header><strong>{attack.name}</strong><span>{attack.skill ?? 'Unmapped'}</span></header>
                       <div><span>Attack</span><strong>{attack.attackBase ?? '—'}</strong></div>
                       {attack.autofireBase !== null && <div><span>Autofire</span><strong>{attack.autofireBase}</strong></div>}
@@ -826,68 +1022,56 @@ export function App() {
                       <div><span>MAG</span><strong>{attack.magazine ?? '—'}</strong></div>
                       <p>{attack.explanation}</p>
                     </button>;
-                  })}</div></article>
+                  }) : <p class="muted">No attacks.</p>}</div></article>
                 </section>}
 
-                {tab === 'skills' && <section class="tab-content">
-                  <div class="skill-tools"><input type="search" placeholder="Filter skills" value={skillSearch} onInput={(event: InputEvent) => setSkillSearch(event.currentTarget.value)} /><button class={trainedOnly ? 'active' : ''} onClick={() => setTrainedOnly((value) => !value)}>Trained only</button></div>
-                  <div class="skill-groups">{SKILL_TYPES.map((type: SkillType) => {
-                    const skills = filteredSkills.filter((skill) => skill.type === type);
-                    return skills.length ? <article key={type}><h3>{pretty(type)}</h3>{skills.map((skill) => {
-                      const reference = findCatalogEntry(entries, { name: skill.name, type: 'skill' });
-                      return <button key={skill.name} type="button" class="skill" disabled={!reference} onClick={() => reference && setSelectedReference({ entry: reference })}><span>{skill.name}<small>{skill.link} {skill.base}{skill.modifier ? ` ${skill.modifier >= 0 ? '+' : ''}${skill.modifier}` : ''}</small></span><strong>{skill.total}</strong></button>;
-                    })}</article> : null;
-                  })}</div>
-                </section>}
+                {tab === 'skills' && (editor.editing
+                  ? <section class="tab-content"><SkillsEditor view={sheet} editor={editor} /></section>
+                  : <section class="tab-content">
+                    <div class="skill-tools"><input type="search" placeholder="Filter skills" value={skillSearch} onInput={(event: InputEvent) => setSkillSearch(event.currentTarget.value)} /><button class={trainedOnly ? 'active' : ''} onClick={() => setTrainedOnly((value) => !value)}>Trained only</button></div>
+                    <div class="skill-groups">{SKILL_TYPES.map((type: SkillType) => {
+                      const skills = filteredSkills.filter((skill) => skill.type === type);
+                      return skills.length ? <article key={type}><h3>{pretty(type)}</h3>{skills.map((skill) => {
+                        const reference = findCatalogEntry(entries, { name: skill.name, type: 'skill' });
+                        return <button key={skill.name} type="button" class="skill" disabled={!reference} onClick={() => reference && setSelectedReference({ entry: reference })}><span>{skill.name}<small>{skill.link} {skill.base}{skill.modifier ? ` ${skill.modifier >= 0 ? '+' : ''}${skill.modifier}` : ''}</small></span><strong>{skill.total}</strong></button>;
+                      })}</article> : null;
+                    })}</div>
+                  </section>)}
 
-                {tab === 'cyberware' && <section class="tab-content cyberware-layout">
-                  {view.npc.cyberware.children.length ? view.npc.cyberware.children.map((node, index) => <CyberwareNode key={`${node.item.id}-${index}`} node={node} entries={entries} view={view} onSelect={setSelectedReference} />) : <p class="muted">No cyberware generated.</p>}
-                </section>}
+                {tab === 'gear' && (editor.editing && editor.catalog
+                  ? <section class="tab-content">
+                    <GearEditor view={sheet} editor={editor} catalog={editor.catalog} />
+                    <CyberwareEditor view={sheet} editor={editor} catalog={editor.catalog} />
+                  </section>
+                  : <section class="tab-content gear-layout">
+                    <div class="gear-grid">
+                      <article><h3>Armor</h3>{sheet.npc.armor.length ? sheet.npc.armor.map((item, index) => <ItemCard key={`${item.name}-${index}`} item={item} entries={entries} view={sheet} onSelect={setSelectedReference} />) : <p class="muted">None</p>}</article>
+                      <article><h3>Weapons</h3>{sheet.npc.weapons.length ? sheet.npc.weapons.map((item, index) => <ItemCard key={`${item.name}-${index}`} item={item} entries={entries} view={sheet} onSelect={setSelectedReference} />) : <p class="muted">None</p>}</article>
+                      <article><h3>Inventory</h3>{sheet.npc.inventory.size ? [...sheet.npc.inventory.values()].map((entry, index) => <ItemCard key={`${entry.item.name}-${index}`} item={entry.item} amount={entry.amount} entries={entries} view={sheet} onSelect={setSelectedReference} />) : <p class="muted">None</p>}</article>
+                    </div>
+                    <article class="gear-cyberware">
+                      <h3>Cyberware</h3>
+                      {sheet.npc.cyberware.children.length
+                        ? sheet.npc.cyberware.children.map((node, index) => <CyberwareNode key={`${node.item.id}-${index}`} node={node} entries={entries} view={sheet} onSelect={setSelectedReference} />)
+                        : <p class="muted">No cyberware installed.</p>}
+                    </article>
+                  </section>)}
 
-                {tab === 'gear' && <section class="tab-content gear-grid">
-                  <article><h3>Armor</h3>{view.npc.armor.length ? view.npc.armor.map((item, index) => <ItemCard key={`${item.name}-${index}`} item={item} entries={entries} view={view} onSelect={setSelectedReference} />) : <p class="muted">None</p>}</article>
-                  <article><h3>Weapons</h3>{view.npc.weapons.map((item, index) => <ItemCard key={`${item.name}-${index}`} item={item} entries={entries} view={view} onSelect={setSelectedReference} />)}</article>
-                  <article><h3>Inventory</h3>{[...view.npc.inventory.values()].map((entry, index) => <ItemCard key={`${entry.item.name}-${index}`} item={entry.item} amount={entry.amount} entries={entries} view={view} onSelect={setSelectedReference} />)}</article>
-                </section>}
-
-                {tab === 'refine' && <section class="tab-content refine-layout">
-                  <header class="refine-header">
-                    <div><span class="kicker">Make changes</span><h3>Refine this operative</h3><p>Reroll one section without changing the rest of the NPC.</p></div>
-                    <span>{view.revisions.length} changes</span>
-                  </header>
-                  <div class="reroll-grid">
-                    {REROLL_SECTIONS.map(({ section, title, description }) => <article key={section}>
-                      <h4>{title}</h4><p>{description}</p><button type="button" disabled={busy} onClick={() => reroll(section)}>Reroll {title}</button>
-                    </article>)}
+                {tab === 'export' && <section class="tab-content export-layout">
+                  <div class="export-grid">
+                    <article><span>Backup</span><h3>NPC file</h3><p>Save the complete NPC so you can import it again later.</p><div><button onClick={() => copyText(nativeJson)}>Copy</button><button onClick={() => download(`${filename}.json`, nativeJson, 'application/json')}>Download</button></div></article>
+                    <article><span>Share</span><h3>Markdown</h3><p>Copy the stat block into notes, campaign documents, or chat.</p><div><button onClick={() => copyText(markdown)}>Copy</button><button onClick={() => download(`${filename}.md`, markdown, 'text/markdown')}>Download</button></div></article>
+                    <article><span>Foundry VTT</span><h3>Foundry JSON</h3><p>Import this NPC into Foundry.</p><div><button onClick={() => copyText(foundryJson)}>Copy</button><button onClick={() => download(`${filename}-foundry.json`, foundryJson, 'application/json')}>Download</button></div></article>
+                    <article><span>Print</span><h3>Print sheet</h3><p>Print the operative or save it as a PDF.</p><div><button onClick={printNpc}>Print</button></div></article>
+                    <article><span>Repeat</span><h3>Generator command</h3><p>Create this NPC again with the same choices.</p><div><button onClick={() => copyText(sheet.command)}>Copy command</button></div></article>
                   </div>
-                  <div class="edit-grid">
-                    <article class="inline-editor"><h3>Base stats</h3><p>Adjust each base stat from 1 to 10.</p><div>
-                      {view.stats.map((stat) => <div key={stat.name}><span>{stat.name}</span><button type="button" disabled={busy || stat.base <= 1} onClick={() => editNpc({ type: 'set-stat', stat: stat.name, value: stat.base - 1 })}>−</button><strong>{stat.base}</strong><button type="button" disabled={busy || stat.base >= 10} onClick={() => editNpc({ type: 'set-stat', stat: stat.name, value: stat.base + 1 })}>+</button></div>)}
-                    </div></article>
-                    <article class="inline-editor"><h3>Trained skills</h3><p>Adjust the NPC's highest trained skills.</p><div>
-                      {[...view.skills].sort((left, right) => right.base - left.base || left.name.localeCompare(right.name)).filter((skill) => skill.base > 0).slice(0, 20).map((skill) => {
-                        const trainedLevel = view.npc.skills.get(skill.name)?.level ?? 0;
-                        return <div key={skill.name}><span>{skill.name}</span><button type="button" disabled={busy || trainedLevel <= 0} onClick={() => editNpc({ type: 'set-skill', skill: skill.name, value: trainedLevel - 1 })}>−</button><strong>{trainedLevel}</strong><button type="button" disabled={busy || trainedLevel >= 10} onClick={() => editNpc({ type: 'set-skill', skill: skill.name, value: trainedLevel + 1 })}>+</button></div>;
-                      })}
-                    </div></article>
-                  </div>
-                  <article class="revision-log"><h3>Change history</h3>{view.revisions.length ? <ol>{[...view.revisions].reverse().map((revision, index) => <li key={`${revision.createdAt}-${index}`}><strong>{pretty(revision.section)}</strong><span>{revision.seed !== undefined ? `variation ${revision.seed}` : revision.command}</span><time>{new Date(revision.createdAt).toLocaleString()}</time></li>)}</ol> : <p>No rerolls or manual changes yet.</p>}</article>
+                  <article class="code-pane">
+                    <header><h3>Statblock text</h3><div><button onClick={() => copyText(sheet.text)}>Copy text</button><button onClick={() => download(`${filename}.txt`, sheet.text, 'text/plain')}>Download</button></div></header>
+                    <pre>{sheet.text}</pre>
+                  </article>
                 </section>}
 
-                {tab === 'validation' && <section class="tab-content validation-panel">
-                  <header><div><span class="kicker">Character check</span><h3>Check this operative</h3></div><div class="validation-counts"><span>{errorCount} errors</span><span>{warningCount} warnings</span><span>{view.validation.filter((issue) => issue.severity === 'info').length} notes</span></div></header>
-                  {view.validation.length === 0 ? <div class="validation-ok"><strong>Everything looks good</strong><p>The NPC is ready to use.</p></div> : <div class="validation-list">{view.validation.map((issue, index) => <article key={`${issue.code}-${issue.subject}-${index}`} class={`validation-issue ${issue.severity}`}><span>{issue.severity}</span><div><strong>{issue.subject ?? issue.code}</strong><p>{issue.message}</p>{issue.suggestedAction && <small>{issue.suggestedAction}</small>}</div></article>)}</div>}
-                </section>}
-
-                {tab === 'text' && <section class="tab-content code-pane"><div><button onClick={() => copyText(view.text)}>Copy text</button><button onClick={() => download(`${filename}.txt`, view.text, 'text/plain')}>Download</button></div><pre>{view.text}</pre></section>}
-
-                {tab === 'exports' && <section class="tab-content export-grid">
-                  <article><span>Backup</span><h3>NPC file</h3><p>Save the complete NPC so you can import it again later.</p><div><button onClick={() => copyText(nativeJson)}>Copy</button><button onClick={() => download(`${filename}.json`, nativeJson, 'application/json')}>Download</button></div></article>
-                  <article><span>Share</span><h3>Markdown</h3><p>Copy the stat block into notes, campaign documents, or chat.</p><div><button onClick={() => copyText(markdown)}>Copy</button><button onClick={() => download(`${filename}.md`, markdown, 'text/markdown')}>Download</button></div></article>
-                  <article><span>Foundry VTT</span><h3>Foundry JSON</h3><p>Import this NPC into Foundry.</p><div><button onClick={() => copyText(foundryJson)}>Copy</button><button onClick={() => download(`${filename}-foundry.json`, foundryJson, 'application/json')}>Download</button></div></article>
-                  <article><span>Print</span><h3>Print sheet</h3><p>Print the operative or save it as a PDF.</p><div><button onClick={printNpc}>Print</button></div></article>
-                  <article><span>Repeat</span><h3>Generator command</h3><p>Create this NPC again with the same choices.</p><div><button onClick={() => copyText(view.command)}>Copy command</button></div></article>
-                </section>}
+                {editor.editing && <EditorActionBar view={sheet} editor={editor} />}
               </div>
             )}
           </section>

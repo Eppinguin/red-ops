@@ -145,9 +145,69 @@ function armorMechanics(document) {
   };
 }
 
-function mechanics(document, type) {
+function drugDescription(document) {
+  const html = asText(get(document, 'system.description.value', 'system.description', 'description')) || '';
+  const primaryHeading = /<strong[^>]*>\s*Primary Effect\s*<\/strong>/i;
+  const secondaryHeading = /<strong[^>]*>\s*Secondary(?: Effect)?(?:\s*\(\s*DV\s*(\d+)\s*\))?\s*<\/strong>/i;
+  const primaryMatch = primaryHeading.exec(html);
+  const secondaryMatch = secondaryHeading.exec(html);
+  const primaryStart = primaryMatch ? primaryMatch.index + primaryMatch[0].length : -1;
+  const secondaryStart = secondaryMatch ? secondaryMatch.index : -1;
+  const primaryText = primaryStart >= 0
+    ? stripHtml(html.slice(primaryStart, secondaryStart >= 0 ? secondaryStart : undefined))
+    : undefined;
+  const secondaryEffect = secondaryMatch
+    ? stripHtml(html.slice(secondaryMatch.index + secondaryMatch[0].length))
+    : undefined;
+  const durationMatch = primaryText?.match(/Dose lasts?\s+(?:for\s+)?([^.]*)\.?/i);
+  const primaryEffect = durationMatch ? primaryText?.replace(durationMatch[0], '').trim() : primaryText;
+  return {
+    primaryEffect: primaryEffect || undefined,
+    secondaryEffect: secondaryEffect || undefined,
+    secondaryDv: secondaryMatch?.[1] ? asNumber(secondaryMatch[1]) : undefined,
+    duration: durationMatch?.[1]?.trim() || undefined,
+  };
+}
+
+function drugMechanics(document, linkedEffects = []) {
+  const consumedEffect = asText(get(document, 'system.consumed'));
+  const description = drugDescription(document);
+  return {
+    kind: 'drug',
+    usage: asText(get(document, 'system.usage')),
+    consumedEffect: consumedEffect && consumedEffect.toLowerCase() !== 'none' ? consumedEffect : undefined,
+    ...description,
+    activeEffects: linkedEffects.map((effect) => {
+      const name = String(effect.name || 'Drug effect');
+      const lowerName = name.toLowerCase();
+      const phase = consumedEffect && name.toLowerCase() === consumedEffect.toLowerCase()
+        ? 'primary'
+        : lowerName.includes('addiction') || lowerName.includes('addicted') || lowerName.includes('secondary')
+            ? 'secondary'
+          : lowerName.includes('primary')
+            ? 'primary'
+            : 'other';
+      return {
+        id: String(effect._id || effect.id || name),
+        name,
+        phase,
+        changes: Array.isArray(effect.changes) ? effect.changes.flatMap((change) => {
+          if (!change || typeof change !== 'object' || typeof change.key !== 'string') return [];
+          return [{
+            key: change.key,
+            mode: typeof change.mode === 'number' || typeof change.mode === 'string' ? change.mode : 2,
+            value: String(change.value ?? ''),
+          }];
+        }) : [],
+      };
+    }),
+  };
+}
+
+function mechanics(document, type, linkedEffects) {
   if (type === 'weapon') return weaponMechanics(document);
   if (type === 'armor') return armorMechanics(document);
+  if (type === 'drug') return drugMechanics(document, linkedEffects);
   if (type === 'cyberware') {
     const isWeapon = asBoolean(get(document, 'system.isWeapon', 'system.weapon.isWeapon')) || Boolean(get(document, 'system.damage'));
     return {
@@ -175,7 +235,7 @@ function mechanics(document, type) {
   };
 }
 
-export function normalizeFoundryDocument({ document, repositoryPath, config, ref }) {
+export function normalizeFoundryDocument({ document, repositoryPath, config, ref, linkedEffects = [] }) {
   if (!document || typeof document !== 'object') return null;
   const rawType = String(document.type || 'gear');
   if (!config.includedDocumentTypes.includes(rawType)) return null;
@@ -202,7 +262,7 @@ export function normalizeFoundryDocument({ document, repositoryPath, config, ref
     name,
     aliases: document.name && document.name !== name ? [String(document.name)] : [],
     summary: description || `${name} is a ${type} entry from the Cyberpunk RED Foundry compendium.`,
-    mechanics: mechanics(document, type),
+    mechanics: mechanics(document, type, linkedEffects),
     ...(priceAmount !== undefined || priceCategory ? {
       price: {
         ...(priceAmount !== undefined ? { amount: priceAmount } : {}),

@@ -1,4 +1,5 @@
 import { priceCategory } from '../engine/domain';
+import { CODE_GENERATED_ITEMS } from '../engine/generatedItems';
 import type { Catalog, ItemData, ItemQuality, ItemType, SkillData } from '../engine/types';
 import { UPSTREAM_COMMIT, UPSTREAM_REPOSITORY } from '../engine/catalog';
 import manualMappingFile from './manual-mappings.json';
@@ -166,6 +167,9 @@ function itemMechanics(item: ItemData): MechanicsSummary {
       },
     };
   }
+  if (item.type === 'drug') {
+    return { kind: 'drug', activeEffects: [] };
+  }
   return {
     kind: 'generic',
     electronic: (item.tags ?? []).some((tag) => /electronic/i.test(tag)),
@@ -264,6 +268,7 @@ export function buildGeneratorCatalog(catalog: Catalog): CatalogEntry[] {
     ...catalog.equipment,
     ...catalog.drugs,
     ...catalog.junk,
+    ...CODE_GENERATED_ITEMS,
   ];
   const entries = [
     ...items.map(generatorItemEntry),
@@ -336,6 +341,18 @@ function mergeMechanics(generator: MechanicsSummary, foundry: MechanicsSummary):
       linkedStat: generator.linkedStat ?? foundry.linkedStat,
       skillType: generator.skillType ?? foundry.skillType,
       multiplier: generator.multiplier ?? foundry.multiplier,
+    };
+  }
+  if (generator.kind === 'drug' && foundry.kind === 'drug') {
+    return {
+      kind: 'drug',
+      usage: foundry.usage ?? generator.usage,
+      duration: foundry.duration ?? generator.duration,
+      primaryEffect: foundry.primaryEffect ?? generator.primaryEffect,
+      secondaryEffect: foundry.secondaryEffect ?? generator.secondaryEffect,
+      secondaryDv: foundry.secondaryDv ?? generator.secondaryDv,
+      consumedEffect: foundry.consumedEffect ?? generator.consumedEffect,
+      activeEffects: foundry.activeEffects.length ? foundry.activeEffects : generator.activeEffects,
     };
   }
   if (generator.kind === 'generic' && foundry.kind === 'generic') {

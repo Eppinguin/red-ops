@@ -121,12 +121,24 @@ if (yamlFiles.length === 0) throw new Error('No Foundry YAML documents were foun
 
 console.log(`Reading ${yamlFiles.length} YAML documents with concurrency ${concurrency}`);
 let completed = 0;
-const entries = (await mapConcurrent(yamlFiles, concurrency, async (repositoryPath) => {
+const documents = await mapConcurrent(yamlFiles, concurrency, async (repositoryPath) => {
   const raw = await readRaw(repositoryPath);
   const document = parseYaml(raw);
   completed += 1;
   if (completed % 50 === 0 || completed === yamlFiles.length) console.log(`  ${completed}/${yamlFiles.length}`);
-  return normalizeFoundryDocument({ document, repositoryPath, config, ref });
+  return { document, repositoryPath };
+});
+const effectsById = new Map(documents
+  .filter(({ repositoryPath, document }) => /(?:^|\/)effect\./.test(repositoryPath) && document?._id)
+  .map(({ document }) => [String(document._id), document]));
+const entries = documents.map(({ document, repositoryPath }) => normalizeFoundryDocument({
+  document,
+  repositoryPath,
+  config,
+  ref,
+  linkedEffects: Array.isArray(document?.effects)
+    ? document.effects.map((effectId) => effectsById.get(String(effectId))).filter(Boolean)
+    : [],
 })).filter(Boolean);
 
 const byId = new Map();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createNativeExport, parseNativeExport } from '../export';
+import { createMarkdownExport, createNativeExport, parseNativeExport } from '../export';
 import type { GeneratedNpcView } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 
@@ -34,6 +34,21 @@ describe('native export', () => {
     expect(serialized).toContain('"model_api_key":null');
   });
 
+  it('retains validation diagnostics for native round-tripping', () => {
+    const source = minimalView();
+    source.validation = [{
+      code: 'catalog.unresolved',
+      severity: 'info',
+      subject: 'Test item',
+      message: 'Test item has no canonical reference entry.',
+    }];
+
+    const serialized = JSON.stringify(createNativeExport(source));
+    const imported = parseNativeExport(serialized);
+
+    expect(imported.validation).toEqual(source.validation);
+  });
+
   it('round-trips a complete native NPC for import', () => {
     const source = minimalView();
     source.npc.stats.set('BODY', 4);
@@ -49,5 +64,22 @@ describe('native export', () => {
   it('rejects JSON that is not a portable native export', () => {
     expect(() => parseNativeExport('{"schemaVersion":2,"npc":{}}'))
       .toThrow('The file is not a supported Red Ops native NPC export.');
+  });
+});
+
+describe('Markdown export', () => {
+  it('does not expose internal validation diagnostics', () => {
+    const source = minimalView();
+    source.validation = [{
+      code: 'catalog.unresolved',
+      severity: 'info',
+      subject: 'Test item',
+      message: 'Internal catalog diagnostic.',
+    }];
+
+    const markdown = createMarkdownExport(source);
+
+    expect(markdown).not.toContain('## Validation');
+    expect(markdown).not.toContain('Internal catalog diagnostic.');
   });
 });

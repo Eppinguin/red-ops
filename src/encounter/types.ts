@@ -35,6 +35,20 @@ export interface EncounterCondition {
   name: string;
   penalty: number;
   notes: string;
+  duration?: string;
+  sourceActionId?: string;
+  phase?: 'primary' | 'secondary';
+  secondaryDv?: number;
+  secondaryEffect?: string;
+  modifiers?: Array<{ key: string; value: number }>;
+}
+
+export interface EncounterItemAction {
+  id: string;
+  name: string;
+  itemType: string;
+  remaining: number | null;
+  max: number | null;
 }
 
 export interface CriticalInjury {
@@ -126,6 +140,8 @@ export interface EncounterCombatant {
   conditions: EncounterCondition[];
   criticalInjuries: CriticalInjury[];
   attacks: EncounterAttack[];
+  /** Carried items tagged as actions, with encounter-local dose/use tracking. */
+  itemActions: EncounterItemAction[];
   cover: EncounterCover | null;
   heldAction: HeldAction | null;
   deathSaveBase: number | null;
@@ -232,6 +248,18 @@ export type EncounterAction =
   | { type: 'heal'; combatantId: string; amount: number }
   | { type: 'add-condition'; combatantId: string; condition: EncounterCondition }
   | { type: 'remove-condition'; combatantId: string; conditionId: string }
+  | { type: 'use-item-action'; combatantId: string; actionId: string; condition?: EncounterCondition }
+  | { type: 'reset-item-action'; combatantId: string; actionId: string }
+  | {
+      type: 'resolve-item-secondary';
+      combatantId: string;
+      conditionId: string;
+      base: number;
+      dv: number;
+      failureCondition?: EncounterCondition;
+      die?: number;
+      extraDie?: number;
+    }
   | { type: 'add-critical'; combatantId: string; injury: CriticalInjury; applyBonusDamage?: boolean }
   | { type: 'roll-critical'; combatantId: string; location: ArmorLocation; roll?: number; applyBonusDamage?: boolean }
   | { type: 'remove-critical'; combatantId: string; injuryId: string }

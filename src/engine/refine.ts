@@ -6,9 +6,10 @@ import type {
   GeneratedNpcView,
   GenerationRevision,
   Npc,
-  NpcCommand,
   NpcSection,
 } from './types';
+
+export type IdentityRerollField = 'name' | 'age' | 'sex' | 'nationality' | 'lifepath';
 
 function cloneNpc(npc: Npc): Npc {
   return structuredClone(npc);
@@ -51,15 +52,20 @@ export function mergeNpcSection(current: Npc, candidate: Npc, section: NpcSectio
   return next;
 }
 
-export function applyNpcCommand(current: Npc, command: NpcCommand): Npc {
+export function mergeIdentityField(current: Npc, candidate: Npc, field: IdentityRerollField): Npc {
   const next = cloneNpc(current);
-  if (command.type === 'set-stat') {
-    next.stats.set(command.stat, Math.max(1, Math.min(10, Math.trunc(command.value))));
-    return next;
+  if (field === 'name') {
+    next.name = candidate.name;
+    next.surname = candidate.surname;
+  } else if (field === 'age') {
+    next.age = candidate.age;
+  } else if (field === 'sex') {
+    next.sex = candidate.sex;
+  } else if (field === 'nationality') {
+    next.nationality = candidate.nationality;
+  } else {
+    next.lifepath = structuredClone(candidate.lifepath);
   }
-  const entry = next.skills.get(command.skill);
-  if (!entry) throw new Error(`Unknown skill: ${command.skill}`);
-  entry.level = Math.max(0, Math.min(10, Math.trunc(command.value)));
   return next;
 }
 
@@ -92,25 +98,23 @@ export function createRerolledView(
   ]);
 }
 
-export function createEditedView(
+export function createIdentityFieldRerolledView(
   current: GeneratedNpcView,
-  command: NpcCommand,
+  candidate: GeneratedCore,
+  field: IdentityRerollField,
   catalog: Catalog,
   referenceEntries: readonly CatalogEntry[],
 ): GeneratedNpcView {
   const core: GeneratedCore = {
-    npc: applyNpcCommand(current.npc, command),
+    npc: mergeIdentityField(current.npc, candidate.npc, field),
     rank: current.rank,
     role: current.role,
     options: { ...current.options, model_api_key: null },
     seed: current.seed,
-    warning: null,
+    warning: candidate.warning,
   };
-  const label = command.type === 'set-stat'
-    ? `${command.stat}=${command.value}`
-    : `${command.skill}=${command.value}`;
   return createGeneratedView(core, catalog, referenceEntries, [
     ...current.revisions,
-    revision('edit', { command: label }),
+    revision('identity', { seed: candidate.seed, command: `reroll ${field}` }),
   ]);
 }

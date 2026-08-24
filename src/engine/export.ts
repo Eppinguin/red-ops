@@ -155,10 +155,6 @@ export function createMarkdownExport(view: GeneratedNpcView): string {
     '',
     ...[...view.skills].sort((a, b) => b.total - a.total).slice(0, 12).map((skill) => `- ${skill.name}: ${skill.total}`),
     '',
-    '## Validation',
-    '',
-    ...(view.validation.length ? view.validation.map((issue) => `- **${issue.severity.toUpperCase()}** ${issue.message}`) : ['- No issues detected.']),
-    '',
     ...(view.revisions.length ? [
       '## Revisions',
       '',

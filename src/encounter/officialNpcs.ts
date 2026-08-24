@@ -536,6 +536,7 @@ export function createOfficialCombatant(templateId: OfficialNpcTemplateId, optio
     conditions: [],
     criticalInjuries: [],
     attacks,
+    itemActions: [],
     cover: null,
     heldAction: null,
     deathSaveBase: source.deathSave,

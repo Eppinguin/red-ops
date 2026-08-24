@@ -16,6 +16,7 @@ import type {
   EncounterAction,
   EncounterAttack,
   EncounterCombatant,
+  EncounterCondition,
   EncounterCore,
   EncounterState,
   ExplodingD10Result,
@@ -82,11 +83,48 @@ export function sortCombatants(combatants: readonly EncounterCombatant[]): Encou
 }
 
 export function isSeriouslyWounded(combatant: EncounterCombatant): boolean {
-  return !combatant.painEditor
+  return !hasPainSuppression(combatant)
     && combatant.currentHp !== null
     && combatant.currentHp > 0
     && combatant.seriouslyWoundedAt !== null
     && combatant.currentHp <= combatant.seriouslyWoundedAt;
+}
+
+function effectKeyName(key: string): string {
+  const tail = key.split('.').at(-1) ?? key;
+  return tail
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[^a-z0-9]+/gi, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function conditionModifier(combatant: EncounterCombatant, predicate: (key: string) => boolean): number {
+  return combatant.conditions.reduce((total, condition) => total + (condition.modifiers ?? [])
+    .filter((modifier) => predicate(modifier.key))
+    .reduce((sum, modifier) => sum + modifier.value, 0), 0);
+}
+
+export function hasPainSuppression(combatant: EncounterCombatant): boolean {
+  return combatant.painEditor || conditionModifier(combatant, (key) => key === 'bonuses.hasPainSuppression') > 0;
+}
+
+/** Applies Foundry Active Effect stat/skill changes to a printed check base. */
+export function effectCheckModifier(combatant: EncounterCombatant, label: string): number {
+  const normalized = label.replace(/[^a-z0-9]+/gi, ' ').trim().toLowerCase();
+  const linkedStat = combatant.npcView?.skills.find((skill) => skill.name.toLowerCase() === label.toLowerCase())?.link.toLowerCase();
+  const officialStat = combatant.statBlock?.skills.find((skill) => skill.name.toLowerCase() === label.toLowerCase())
+    ? null
+    : combatant.statBlock?.stats.find((stat) => stat.name.toLowerCase() === normalized)?.name.toLowerCase();
+  return conditionModifier(combatant, (key) => {
+    const stat = key.match(/^system\.stats\.([a-z]+)\.value$/i)?.[1]?.toLowerCase();
+    if (stat) return stat === normalized || stat === linkedStat || stat === officialStat;
+    return key.startsWith('bonuses.') && effectKeyName(key) === normalized;
+  });
+}
+
+export function effectiveCheckBase(combatant: EncounterCombatant, label: string, base: number): number {
+  return base - combatantPenalty(combatant) + effectCheckModifier(combatant, label);
 }
 
 export function combatantPenalty(combatant: EncounterCombatant): number {
@@ -97,11 +135,13 @@ export function combatantPenalty(combatant: EncounterCombatant): number {
 }
 
 export function canDodgeRanged(combatant: EncounterCombatant): boolean {
-  return combatant.reflex !== null && combatant.reflex >= 8 && combatant.evasionBase !== null;
+  return combatant.reflex !== null
+    && combatant.reflex + effectCheckModifier(combatant, 'REF') >= 8
+    && combatant.evasionBase !== null;
 }
 
 export function effectiveEvasionBase(combatant: EncounterCombatant): number | null {
-  return combatant.evasionBase === null ? null : combatant.evasionBase - combatantPenalty(combatant);
+  return combatant.evasionBase === null ? null : effectiveCheckBase(combatant, 'Evasion', combatant.evasionBase);
 }
 
 function attackScope(attack: EncounterAttack): 'ranged' | 'melee' {
@@ -122,7 +162,8 @@ export function attackPenalty(combatant: EncounterCombatant, attack: EncounterAt
 export function deathSaveTarget(combatant: EncounterCombatant): number | null {
   if (combatant.deathSaveBase === null) return null;
   const criticalPenalty = combatant.criticalInjuries.reduce((sum, injury) => sum + Math.max(0, injury.deathSavePenalty), 0);
-  return Math.max(0, combatant.deathSaveBase - combatant.deathSaveFailures - criticalPenalty);
+  const drugPenalty = conditionModifier(combatant, (key) => key === 'bonuses.deathSavePenalty');
+  return Math.max(0, combatant.deathSaveBase - combatant.deathSaveFailures - criticalPenalty - drugPenalty);
 }
 
 function bodyAndHeadArmor(view: GeneratedNpcView): Record<ArmorLocation, { current: number; max: number }> {
@@ -183,6 +224,28 @@ function attacksFromNpc(view: GeneratedNpcView): EncounterAttack[] {
   });
 }
 
+function itemActionsFromNpc(view: GeneratedNpcView) {
+  const inventory = [...view.npc.inventory.values()];
+  const cyberwareItems = view.npc.cyberware
+    ? (function flatten(node: typeof view.npc.cyberware): Item[] {
+        return [node.item, ...node.children.flatMap(flatten)];
+      })(view.npc.cyberware)
+    : [];
+  const items = [...view.npc.armor, ...view.npc.weapons, ...inventory.map((entry) => entry.item), ...cyberwareItems];
+  return (view.actions ?? []).map((name) => {
+    const item = items.find((candidate) => candidate.name === name);
+    const inventoryEntry = inventory.find((entry) => entry.item.id === item?.id || entry.item.name === name);
+    const amount = inventoryEntry?.amount ?? null;
+    return {
+      id: id('item-action'),
+      name,
+      itemType: item?.type ?? 'equipment',
+      remaining: amount,
+      max: amount,
+    };
+  });
+}
+
 export function combatantFromNpc(view: GeneratedNpcView): EncounterCombatant {
   const timestamp = now();
   const primary = view.combat.attacks[0];
@@ -201,6 +264,7 @@ export function combatantFromNpc(view: GeneratedNpcView): EncounterCombatant {
     conditions: [],
     criticalInjuries: [],
     attacks: attacksFromNpc(view),
+    itemActions: itemActionsFromNpc(view),
     cover: null,
     heldAction: null,
     deathSaveBase: view.combat.deathSave,
@@ -244,6 +308,7 @@ export function createPcCombatant(input: {
     conditions: [],
     criticalInjuries: [],
     attacks: [],
+    itemActions: [],
     cover: null,
     heldAction: null,
     deathSaveBase: null,
@@ -360,14 +425,16 @@ function rollAttack(combatant: EncounterCombatant, attackId: string, die: number
     const hasAmmo = attack.ammo.current === null || attack.ammo.current > 0;
     const ammoSpent = attack.ammo.current !== null && hasAmmo;
     const current = ammoSpent ? Math.max(0, attack.ammo.current! - 1) : attack.ammo.current;
+    const effectModifier = effectCheckModifier(combatant, attack.skill);
+    const effectiveBase = attack.base === null ? null : attack.base + effectModifier;
     result = {
       attackId,
       die: roll.die,
       extraDie: roll.extraDie,
       dieTotal: roll.dieTotal,
-      base: attack.base,
+      base: effectiveBase,
       penalty,
-      total: attack.base === null ? null : attack.base - penalty + roll.dieTotal,
+      total: effectiveBase === null ? null : effectiveBase - penalty + roll.dieTotal,
       ammoSpent,
     };
     return { ...attack, ammo: { ...attack.ammo, current } };
@@ -444,6 +511,9 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
       case 'heal': return `Healed ${action.amount} HP`;
       case 'add-condition': return `Added ${action.condition.name}`;
       case 'remove-condition': return 'Removed condition';
+      case 'use-item-action': return 'Used item action';
+      case 'reset-item-action': return 'Reset item action uses';
+      case 'resolve-item-secondary': return 'Resolved secondary effect';
       case 'add-critical': return `Added critical injury: ${action.injury.name}`;
       case 'roll-critical': return `Rolled ${action.location} critical injury`;
       case 'remove-critical': return 'Removed critical injury';
@@ -516,7 +586,9 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
           if (action.scope === 'npcs' && combatant.kind !== 'npc') return combatant;
           if (combatant.initiativeBase === null) return combatant;
           const roll = rollExplodingD10(action.rolls?.[combatant.id] ?? randomD10(), action.extraRolls?.[combatant.id]);
-          return { ...combatant, initiative: combatant.initiativeBase + roll.dieTotal };
+          const effectModifier = effectCheckModifier(combatant, 'REF')
+            + conditionModifier(combatant, (key) => key === 'bonuses.initiative');
+          return { ...combatant, initiative: combatant.initiativeBase + effectModifier + roll.dieTotal };
         }),
       };
       event = `Rolled initiative for ${action.scope === 'npcs' ? 'NPCs' : 'all combatants'} with RED critical d10s`;
@@ -567,6 +639,63 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
       break;
     case 'remove-condition':
       next = updateCombatant(next, action.combatantId, (combatant) => ({ ...combatant, conditions: combatant.conditions.filter((condition) => condition.id !== action.conditionId) }));
+      break;
+    case 'use-item-action':
+      next = updateCombatant(next, action.combatantId, (combatant) => {
+        const itemAction = combatant.itemActions.find((candidate) => candidate.id === action.actionId);
+        if (!itemAction) {
+          event = `${combatant.name}: item action unavailable`;
+          return combatant;
+        }
+        if (itemAction.remaining === 0) {
+          event = `${combatant.name} · ${itemAction.name}: no uses remaining`;
+          return combatant;
+        }
+        const itemActions = combatant.itemActions.map((candidate) => candidate.id === itemAction.id && candidate.remaining !== null
+          ? { ...candidate, remaining: Math.max(0, candidate.remaining - 1) }
+          : candidate);
+        const conditions = action.condition
+          ? [...combatant.conditions.filter((condition) => condition.sourceActionId !== itemAction.id || condition.phase !== 'primary'), action.condition]
+          : combatant.conditions;
+        event = `${combatant.name} used ${itemAction.name}${itemAction.remaining === null ? '' : ` · ${itemAction.remaining - 1}/${itemAction.max} remaining`}`;
+        return { ...combatant, itemActions, conditions };
+      });
+      break;
+    case 'reset-item-action':
+      next = updateCombatant(next, action.combatantId, (combatant) => {
+        const itemAction = combatant.itemActions.find((candidate) => candidate.id === action.actionId);
+        if (!itemAction || itemAction.max === null) {
+          event = `${combatant.name}: item action cannot be reset`;
+          return combatant;
+        }
+        event = `${combatant.name} · ${itemAction.name}: doses reset to ${itemAction.max}`;
+        return {
+          ...combatant,
+          itemActions: combatant.itemActions.map((candidate) => candidate.id === action.actionId
+            ? { ...candidate, remaining: candidate.max }
+            : candidate),
+        };
+      });
+      break;
+    case 'resolve-item-secondary':
+      next = updateCombatant(next, action.combatantId, (combatant) => {
+        const primary = combatant.conditions.find((condition) => condition.id === action.conditionId);
+        if (!primary) return combatant;
+        const roll = rollExplodingD10(action.die ?? randomD10(), action.extraDie);
+        const total = Math.trunc(action.base) + roll.dieTotal;
+        const success = total >= action.dv;
+        const retained = combatant.conditions.filter((condition) => condition.id !== primary.id);
+        const withoutPreviousSecondary = action.failureCondition?.sourceActionId
+          ? retained.filter((condition) => condition.sourceActionId !== action.failureCondition!.sourceActionId || condition.phase !== 'secondary')
+          : retained;
+        event = `${combatant.name} · ${primary.name} secondary ${total} vs DV ${action.dv} · ${success ? 'RESISTED' : 'FAILED'}`;
+        return {
+          ...combatant,
+          conditions: success || !action.failureCondition
+            ? withoutPreviousSecondary
+            : [...withoutPreviousSecondary, action.failureCondition],
+        };
+      });
       break;
     case 'add-critical':
       next = updateCombatant(next, action.combatantId, (combatant) => {
@@ -754,8 +883,9 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
     case 'roll-death-save':
       next = updateCombatant(next, action.combatantId, (combatant) => {
         const criticalPenalty = combatant.criticalInjuries.reduce((sum, injury) => sum + Math.max(0, injury.deathSavePenalty), 0);
+        const drugPenalty = conditionModifier(combatant, (key) => key === 'bonuses.deathSavePenalty');
         const die = action.die ?? randomD10();
-        const total = die + combatant.deathSaveFailures + criticalPenalty;
+        const total = die + combatant.deathSaveFailures + criticalPenalty + drugPenalty;
         const success = combatant.deathSaveBase !== null && die !== 10 && total < combatant.deathSaveBase;
         event = `${combatant.name} death save: ${total} vs BODY ${combatant.deathSaveBase ?? '—'} · ${success ? 'success' : 'dead'}`;
         if (success) return { ...combatant, deathSaveFailures: combatant.deathSaveFailures + 1 };
@@ -814,6 +944,26 @@ function normalizeAttack(value: unknown): EncounterAttack {
   };
 }
 
+function normalizeCondition(value: unknown) {
+  const raw = value && typeof value === 'object' ? value as Partial<EncounterCondition> : {};
+  return {
+    id: typeof raw.id === 'string' ? raw.id : id('condition'),
+    name: typeof raw.name === 'string' ? raw.name : 'Condition',
+    penalty: finiteOrNull(raw.penalty) ?? 0,
+    notes: typeof raw.notes === 'string' ? raw.notes : '',
+    ...(typeof raw.duration === 'string' ? { duration: raw.duration } : {}),
+    ...(typeof raw.sourceActionId === 'string' ? { sourceActionId: raw.sourceActionId } : {}),
+    ...(raw.phase === 'primary' || raw.phase === 'secondary' ? { phase: raw.phase } : {}),
+    ...(typeof raw.secondaryDv === 'number' ? { secondaryDv: raw.secondaryDv } : {}),
+    ...(typeof raw.secondaryEffect === 'string' ? { secondaryEffect: raw.secondaryEffect } : {}),
+    ...(Array.isArray(raw.modifiers) ? {
+      modifiers: raw.modifiers.flatMap((modifier) => modifier && typeof modifier.key === 'string' && Number.isFinite(modifier.value)
+        ? [{ key: modifier.key, value: Number(modifier.value) }]
+        : []),
+    } : {}),
+  };
+}
+
 function normalizeCombatant(value: unknown): EncounterCombatant {
   const raw = value && typeof value === 'object' ? value as Partial<EncounterCombatant> : {};
   const npcView = raw.npcView ?? null;
@@ -837,9 +987,23 @@ function normalizeCombatant(value: unknown): EncounterCombatant {
       body: { current: finiteOrNull(body?.current) ?? 0, max: finiteOrNull(body?.max) ?? finiteOrNull(body?.current) ?? 0 },
       head: { current: finiteOrNull(head?.current) ?? 0, max: finiteOrNull(head?.max) ?? finiteOrNull(head?.current) ?? 0 },
     },
-    conditions: Array.isArray(raw.conditions) ? raw.conditions : [],
+    conditions: Array.isArray(raw.conditions) ? raw.conditions.map(normalizeCondition) : [],
     criticalInjuries: Array.isArray(raw.criticalInjuries) ? raw.criticalInjuries : [],
     attacks: Array.isArray(raw.attacks) ? raw.attacks.map(normalizeAttack) : [],
+    itemActions: Array.isArray(raw.itemActions) ? raw.itemActions.flatMap((value) => {
+      if (!value || typeof value !== 'object') return [];
+      const itemAction = value as Partial<EncounterCombatant['itemActions'][number]>;
+      if (typeof itemAction.name !== 'string') return [];
+      const remaining = finiteOrNull(itemAction.remaining);
+      const max = finiteOrNull(itemAction.max);
+      return [{
+        id: typeof itemAction.id === 'string' ? itemAction.id : id('item-action'),
+        name: itemAction.name,
+        itemType: typeof itemAction.itemType === 'string' ? itemAction.itemType : 'equipment',
+        remaining,
+        max,
+      }];
+    }) : npcView ? itemActionsFromNpc(npcView) : [],
     cover: raw.cover ?? null,
     heldAction: raw.heldAction ?? null,
     deathSaveBase: finiteOrNull(raw.deathSaveBase),
