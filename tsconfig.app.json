@@ -12,11 +12,13 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
+    "types": ["vite/client", "node"],
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false
   },

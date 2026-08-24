@@ -16,17 +16,17 @@
     "test:content": "node --test scripts/__tests__/*.test.mjs"
   },
   "dependencies": {
-    "@faker-js/faker": "10.5.0",
-    "preact": "10.29.7",
+    "@faker-js/faker": "10.6.0",
+    "preact": "10.29.8",
     "unidecode-plus": "1.0.5",
-    "yaml": "2.8.1"
+    "yaml": "2.9.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "2.10.6",
-    "@types/node": "24.1.0",
-    "typescript": "5.8.3",
-    "vite": "8.1.5",
-    "vitest": "4.1.10"
+    "@types/node": "26.2.0",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
   },
   "description": "Frontend-only Cyberpunk RED NPC generator, reference catalog, and persistent encounter runner.",
   "license": "GPL-3.0-only",
