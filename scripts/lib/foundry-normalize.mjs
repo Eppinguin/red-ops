@@ -182,7 +182,7 @@ function drugMechanics(document, linkedEffects = []) {
       const lowerName = name.toLowerCase();
       const phase = consumedEffect && name.toLowerCase() === consumedEffect.toLowerCase()
         ? 'primary'
-        : lowerName.includes('addiction') || lowerName.includes('addicted') || lowerName.includes('secondary')
+        : lowerName.includes('addiction') || lowerName.includes('addiciton') || lowerName.includes('addicted') || lowerName.includes('secondary')
             ? 'secondary'
           : lowerName.includes('primary')
             ? 'primary'

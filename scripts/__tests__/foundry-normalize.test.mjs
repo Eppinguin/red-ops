@@ -77,7 +77,7 @@ test('preserves structured drug use, phases, DV, duration, and active-effect cha
       changes: [{ key: 'system.stats.ref.value', mode: 2, value: '1' }],
     }, {
       _id: 'addiction',
-      name: 'Synthcoke Addiction',
+      name: 'Synthcoke Addiciton',
       changes: [{ key: 'system.stats.ref.value', mode: 2, value: '-2' }],
     }],
   });

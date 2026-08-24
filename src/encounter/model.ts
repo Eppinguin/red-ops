@@ -90,13 +90,13 @@ export function isSeriouslyWounded(combatant: EncounterCombatant): boolean {
     && combatant.currentHp <= combatant.seriouslyWoundedAt;
 }
 
-function effectKeyName(key: string): string {
-  const tail = key.split('.').at(-1) ?? key;
-  return tail
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/[^a-z0-9]+/gi, ' ')
-    .trim()
-    .toLowerCase();
+function ruleName(value: string): string {
+  return value.replace(/[^a-z0-9]+/gi, '').toLowerCase();
+}
+
+function conditionModifierValue(condition: EncounterCondition | undefined, key: string): number {
+  return condition?.modifiers?.filter((modifier) => modifier.key === key)
+    .reduce((sum, modifier) => sum + modifier.value, 0) ?? 0;
 }
 
 function conditionModifier(combatant: EncounterCombatant, predicate: (key: string) => boolean): number {
@@ -111,15 +111,16 @@ export function hasPainSuppression(combatant: EncounterCombatant): boolean {
 
 /** Applies Foundry Active Effect stat/skill changes to a printed check base. */
 export function effectCheckModifier(combatant: EncounterCombatant, label: string): number {
-  const normalized = label.replace(/[^a-z0-9]+/gi, ' ').trim().toLowerCase();
-  const linkedStat = combatant.npcView?.skills.find((skill) => skill.name.toLowerCase() === label.toLowerCase())?.link.toLowerCase();
-  const officialStat = combatant.statBlock?.skills.find((skill) => skill.name.toLowerCase() === label.toLowerCase())
+  const normalized = ruleName(label);
+  const linkedStat = combatant.npcView?.skills.find((skill) => ruleName(skill.name) === normalized)?.link;
+  const officialStat = combatant.statBlock?.skills.find((skill) => ruleName(skill.name) === normalized)
     ? null
-    : combatant.statBlock?.stats.find((stat) => stat.name.toLowerCase() === normalized)?.name.toLowerCase();
+    : combatant.statBlock?.stats.find((stat) => ruleName(stat.name) === normalized)?.name;
   return conditionModifier(combatant, (key) => {
-    const stat = key.match(/^system\.stats\.([a-z]+)\.value$/i)?.[1]?.toLowerCase();
-    if (stat) return stat === normalized || stat === linkedStat || stat === officialStat;
-    return key.startsWith('bonuses.') && effectKeyName(key) === normalized;
+    const stat = key.match(/^system\.stats\.([a-z]+)\.value$/i)?.[1];
+    if (stat) return ruleName(stat) === normalized || ruleName(stat) === ruleName(linkedStat ?? '') || ruleName(stat) === ruleName(officialStat ?? '');
+    const bonus = key.match(/^bonuses\.(.+)$/i)?.[1];
+    return Boolean(bonus) && ruleName(bonus!) === normalized;
   });
 }
 
@@ -159,11 +160,15 @@ export function attackPenalty(combatant: EncounterCombatant, attack: EncounterAt
   return base + scoped;
 }
 
-export function deathSaveTarget(combatant: EncounterCombatant): number | null {
-  if (combatant.deathSaveBase === null) return null;
+export function deathSavePenalty(combatant: EncounterCombatant): number {
   const criticalPenalty = combatant.criticalInjuries.reduce((sum, injury) => sum + Math.max(0, injury.deathSavePenalty), 0);
   const drugPenalty = conditionModifier(combatant, (key) => key === 'bonuses.deathSavePenalty');
-  return Math.max(0, combatant.deathSaveBase - combatant.deathSaveFailures - criticalPenalty - drugPenalty);
+  return combatant.deathSaveFailures + criticalPenalty + drugPenalty;
+}
+
+export function deathSaveTarget(combatant: EncounterCombatant): number | null {
+  if (combatant.deathSaveBase === null) return null;
+  return Math.max(0, combatant.deathSaveBase - deathSavePenalty(combatant));
 }
 
 function bodyAndHeadArmor(view: GeneratedNpcView): Record<ArmorLocation, { current: number; max: number }> {
@@ -638,7 +643,17 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
       next = updateCombatant(next, action.combatantId, (combatant) => ({ ...combatant, conditions: [...combatant.conditions, action.condition] }));
       break;
     case 'remove-condition':
-      next = updateCombatant(next, action.combatantId, (combatant) => ({ ...combatant, conditions: combatant.conditions.filter((condition) => condition.id !== action.conditionId) }));
+      next = updateCombatant(next, action.combatantId, (combatant) => {
+        const removed = combatant.conditions.find((condition) => condition.id === action.conditionId);
+        const initiativeDelta = removed?.phase === 'primary'
+          ? conditionModifierValue(removed, 'bonuses.initiative')
+          : 0;
+        return {
+          ...combatant,
+          initiative: combatant.initiative === null ? null : combatant.initiative - initiativeDelta,
+          conditions: combatant.conditions.filter((condition) => condition.id !== action.conditionId),
+        };
+      });
       break;
     case 'use-item-action':
       next = updateCombatant(next, action.combatantId, (combatant) => {
@@ -651,6 +666,9 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
           event = `${combatant.name} · ${itemAction.name}: no uses remaining`;
           return combatant;
         }
+        const previousPrimary = combatant.conditions.find((condition) => condition.sourceActionId === itemAction.id && condition.phase === 'primary');
+        const initiativeDelta = conditionModifierValue(action.condition, 'bonuses.initiative')
+          - conditionModifierValue(previousPrimary, 'bonuses.initiative');
         const itemActions = combatant.itemActions.map((candidate) => candidate.id === itemAction.id && candidate.remaining !== null
           ? { ...candidate, remaining: Math.max(0, candidate.remaining - 1) }
           : candidate);
@@ -658,7 +676,12 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
           ? [...combatant.conditions.filter((condition) => condition.sourceActionId !== itemAction.id || condition.phase !== 'primary'), action.condition]
           : combatant.conditions;
         event = `${combatant.name} used ${itemAction.name}${itemAction.remaining === null ? '' : ` · ${itemAction.remaining - 1}/${itemAction.max} remaining`}`;
-        return { ...combatant, itemActions, conditions };
+        return {
+          ...combatant,
+          initiative: combatant.initiative === null ? null : combatant.initiative + initiativeDelta,
+          itemActions,
+          conditions,
+        };
       });
       break;
     case 'reset-item-action':
@@ -691,6 +714,9 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
         event = `${combatant.name} · ${primary.name} secondary ${total} vs DV ${action.dv} · ${success ? 'RESISTED' : 'FAILED'}`;
         return {
           ...combatant,
+          initiative: combatant.initiative === null
+            ? null
+            : combatant.initiative - conditionModifierValue(primary, 'bonuses.initiative'),
           conditions: success || !action.failureCondition
             ? withoutPreviousSecondary
             : [...withoutPreviousSecondary, action.failureCondition],
@@ -882,10 +908,8 @@ export function encounterReducer(state: EncounterState, action: EncounterAction)
       break;
     case 'roll-death-save':
       next = updateCombatant(next, action.combatantId, (combatant) => {
-        const criticalPenalty = combatant.criticalInjuries.reduce((sum, injury) => sum + Math.max(0, injury.deathSavePenalty), 0);
-        const drugPenalty = conditionModifier(combatant, (key) => key === 'bonuses.deathSavePenalty');
         const die = action.die ?? randomD10();
-        const total = die + combatant.deathSaveFailures + criticalPenalty + drugPenalty;
+        const total = die + deathSavePenalty(combatant);
         const success = combatant.deathSaveBase !== null && die !== 10 && total < combatant.deathSaveBase;
         event = `${combatant.name} death save: ${total} vs BODY ${combatant.deathSaveBase ?? '—'} · ${success ? 'success' : 'dead'}`;
         if (success) return { ...combatant, deathSaveFailures: combatant.deathSaveFailures + 1 };

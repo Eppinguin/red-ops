@@ -16,6 +16,7 @@ import {
   canDodgeRanged,
   combatantPenalty,
   createEmptyEncounter,
+  deathSavePenalty,
   deathSaveTarget,
   effectiveCheckBase,
   effectiveEvasionBase,
@@ -654,7 +655,7 @@ function CombatantInspector({ combatant, referenceEntries, dispatch, onClose, on
 
         <section>
           <h3>Death saves</h3>
-          <div class="death-save-row"><span>Current target</span><strong>{target ?? '—'}</strong><span>Penalty</span><strong>+{combatant.deathSaveFailures + combatant.criticalInjuries.reduce((sum, injury) => sum + injury.deathSavePenalty, 0)}</strong><button type="button" disabled={target === null} onClick={() => dispatch({ type: 'roll-death-save', combatantId: combatant.id })}>Roll death save</button></div>
+          <div class="death-save-row"><span>Current target</span><strong>{target ?? '—'}</strong><span>Penalty</span><strong>+{deathSavePenalty(combatant)}</strong><button type="button" disabled={target === null} onClick={() => dispatch({ type: 'roll-death-save', combatantId: combatant.id })}>Roll death save</button></div>
         </section>
 
         <section>

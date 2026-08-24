@@ -1,7 +1,7 @@
 {
   "manifest": {
     "schemaVersion": 1,
-    "generatedAt": "2026-08-24T06:31:32.820Z",
+    "generatedAt": "2026-08-24T07:22:25.616Z",
     "generator": {
       "repository": "n0lavar/cp_red_npc_generator",
       "commit": "dfd4c08c4295c3d34f11a6c75c4d3ae5792ef2a4"
@@ -12,7 +12,7 @@
       "ref": "v0.92.4",
       "commit": "75b8c9d7cb76ed1ea2797a3404ce77172d424b6b",
       "itemCount": 1073,
-      "contentHash": "1c583475a69cf439c2e8b3e090acaf55b420499d296450e6ee50d732836d0f75"
+      "contentHash": "0f4aad3b6e3acad21cb53d8250099481f8704a27dfc870a5ee668fb66c4b7a62"
     },
     "entryCount": 1073,
     "conflictCount": 0
@@ -36920,7 +36920,7 @@
           {
             "id": "qSb9OyRqLojya1co",
             "name": "Piranha Smash Addiciton",
-            "phase": "other",
+            "phase": "secondary",
             "changes": [
               {
                 "key": "bonuses.dance",

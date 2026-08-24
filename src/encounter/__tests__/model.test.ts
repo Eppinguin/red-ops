@@ -7,6 +7,7 @@ import {
   combatantPenalty,
   createEmptyEncounter,
   createPcCombatant,
+  deathSavePenalty,
   effectCheckModifier,
   encounterReducer,
   isSeriouslyWounded,
@@ -293,6 +294,68 @@ describe('encounter model', () => {
     };
     expect(isSeriouslyWounded(combatant)).toBe(false);
     expect(combatantPenalty(combatant)).toBe(0);
+  });
+
+  it('applies compact Foundry skill bonus keys to generator skill names', () => {
+    const combatant = {
+      ...createPcCombatant({ name: 'Smash user' }),
+      conditions: [{
+        id: 'smash',
+        name: 'Smash · primary',
+        penalty: 0,
+        notes: '+2 Human Perception',
+        modifiers: [{ key: 'bonuses.humanPerception', value: 2 }],
+      }],
+    };
+    expect(effectCheckModifier(combatant, 'HumanPerception')).toBe(2);
+    expect(effectCheckModifier(combatant, 'Human Perception')).toBe(2);
+  });
+
+  it('adjusts current initiative for Timewarp without stacking redoses and reverts it when the dose ends', () => {
+    let state = createEmptyEncounter();
+    const pc = {
+      ...createPcCombatant({ name: 'Timewarp user', initiative: 16, initiativeBase: 7 }),
+      itemActions: [{ id: 'timewarp', name: 'Timewarp', itemType: 'drug', remaining: 2, max: 2 }],
+    };
+    const primary = {
+      id: 'timewarp-primary',
+      name: 'Timewarp · primary',
+      penalty: 0,
+      notes: '+3 Initiative',
+      sourceActionId: 'timewarp',
+      phase: 'primary' as const,
+      modifiers: [{ key: 'bonuses.initiative', value: 3 }],
+    };
+    state = encounterReducer(state, { type: 'add-combatant', combatant: pc });
+    state = encounterReducer(state, { type: 'use-item-action', combatantId: pc.id, actionId: 'timewarp', condition: primary });
+    expect(state.combatants[0]!.initiative).toBe(19);
+
+    state = encounterReducer(state, {
+      type: 'use-item-action',
+      combatantId: pc.id,
+      actionId: 'timewarp',
+      condition: { ...primary, id: 'timewarp-redose' },
+    });
+    expect(state.combatants[0]!.initiative).toBe(19);
+    expect(state.combatants[0]!.conditions.filter((condition) => condition.phase === 'primary')).toHaveLength(1);
+
+    state = encounterReducer(state, { type: 'remove-condition', combatantId: pc.id, conditionId: 'timewarp-redose' });
+    expect(state.combatants[0]!.initiative).toBe(16);
+  });
+
+  it('includes Foundry addiction modifiers in the displayed Death Save penalty', () => {
+    const combatant = {
+      ...createPcCombatant({ name: 'Berserker user' }),
+      deathSaveFailures: 1,
+      conditions: [{
+        id: 'berserker-addiction',
+        name: 'Berserker · secondary',
+        penalty: 0,
+        notes: '+1 Death Save penalty',
+        modifiers: [{ key: 'bonuses.deathSavePenalty', value: 1 }],
+      }],
+    };
+    expect(deathSavePenalty(combatant)).toBe(2);
   });
 
   it('requires the attacker to beat the defense and remembers the selected range', () => {
